@@ -8,17 +8,55 @@
 import { EditorView } from '@codemirror/view';
 
 export const editorTheme = EditorView.theme({
-  // Increase left padding for better "breathing room"
+  // Better padding for content area
   '.cm-scroller': {
     padding: '2rem 3rem 2rem 2rem',
   },
-  // Style for the hyphenated words created by the decoration extension
-  '.hyphenated-word': {
-    color: 'hsl(var(--color-muted) / 0.4)', // Default state: very subtle
+  
+  // Syllable marker styling - visible but not distracting
+  '.syllable-marker': {
+    color: 'hsl(var(--color-primary) / 0.5)',
+    fontWeight: '500',
+    margin: '0 0.5px',
+    userSelect: 'none',
+    pointerEvents: 'none',
+    fontSize: '0.9em',
     transition: 'color 150ms ease-in-out',
   },
-  // On the active line, make the markers prominent and match the primary color
-  '.cm-activeLine .hyphenated-word': {
-    color: 'hsl(var(--color-primary))',
+  
+  // Style for words with syllable markers
+  '.hyphenated-word': {
+    letterSpacing: '0.02em', // Slightly more spacing for readability
   },
-}, { dark: true }); // Assuming dark is the default/base theme style
+  
+  // On the active line, make markers more prominent
+  '.cm-activeLine .syllable-marker': {
+    color: 'hsl(var(--color-primary))',
+    fontWeight: '600',
+  },
+  
+  // Section headers - make them stand out more
+  '.cm-section-header': {
+    fontWeight: '700',
+    color: 'hsl(var(--color-accent))',
+    background: 'hsl(var(--color-accent) / 0.15)',
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+    marginLeft: '-0.5rem',
+    borderLeft: '3px solid hsl(var(--color-accent))',
+    borderRadius: '0 0.25rem 0.25rem 0',
+  },
+  
+  // Comment lines - more subtle
+  '.cm-comment-line': {
+    color: 'hsl(var(--color-muted) / 0.7)',
+    fontStyle: 'italic',
+  },
+  
+  // Improve gutter appearance
+  '.cm-syllable-gutter': {
+    minWidth: '3rem',
+    paddingLeft: '0.5rem',
+    paddingRight: '0.75rem',
+  },
+}, { dark: true });
