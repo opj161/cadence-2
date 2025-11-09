@@ -47,6 +47,32 @@
   min-height: 100vh;
 }
 
+/* Light mode overrides */
+:root:not(.dark) {
+  --color-background: 0 0% 98%;           /* Light background */
+  --color-foreground: 220 10% 10%;        /* Dark text */
+  --color-primary: 180 55% 40%;           /* Darker teal for contrast */
+  --color-accent: 265 60% 50%;            /* Darker purple */
+  --color-muted: 220 10% 60%;             /* Muted text */
+  --color-border: 220 15% 85%;            /* Light borders */
+  --color-editor-bg: 0 0% 100%;           /* White editor */
+  --color-gutter-bg: 220 15% 97%;         /* Light gutter */
+  --color-active-line: 220 15% 96%;       /* Subtle active line */
+}
+
+:root:not(.dark) .lyric-editor-container .cm-editor {
+  background: white;
+  border-color: hsl(220 15% 85%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .lyric-editor-container .cm-focused {
+  border-color: hsl(180 55% 40%);
+  box-shadow: 
+    0 0 0 1px hsl(180 55% 40% / 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
 /* ============================================================================
  * EDITOR CONTAINER STYLES
  * ============================================================================ */

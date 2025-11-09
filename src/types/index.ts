@@ -110,6 +110,10 @@ export interface LyricEditorProps {
   onChange?: (value: string) => void;
   /** Callback when syllable data updates */
   onSyllableUpdate?: (lineNumber: number, data: SyllableData) => void;
+  /** Whether to show syllable markers */
+  syllablesVisible?: boolean;
+  /** Font size for editor text */
+  fontSize?: number;
   /** CSS class name for the editor container */
   className?: string;
 }

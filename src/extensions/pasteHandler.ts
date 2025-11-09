@@ -12,7 +12,7 @@ import { EditorView } from '@codemirror/view';
 /**
  * Handle paste events
  */
-function handlePaste(event: ClipboardEvent, _view: EditorView): boolean {
+function handlePaste(event: ClipboardEvent): boolean {
   const text = event.clipboardData?.getData('text/plain');
   
   if (!text) return false;

@@ -8,4 +8,23 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate CodeMirror into its own chunk
+          'codemirror': [
+            '@codemirror/state',
+            '@codemirror/view',
+            '@codemirror/language',
+            '@uiw/react-codemirror',
+          ],
+          // Separate React into its own chunk
+          'react-vendor': ['react', 'react-dom'],
+        },
+      },
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 600,
+  },
 })
