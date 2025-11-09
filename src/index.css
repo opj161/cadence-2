@@ -114,7 +114,6 @@
 .lyric-editor-container .cm-scroller {
   overflow: auto;
   font-family: inherit;
-  padding: 2rem 3rem 2rem 0.5rem;
 }
 
 /* Modern scrollbar - Thinner and more subtle */
@@ -231,13 +230,6 @@
   margin: 0 1px;
   user-select: none;
   pointer-events: none;
-}
-
-/* Hyphenated Word Styles - Better visibility */
-.hyphenated-word {
-  color: inherit;
-  letter-spacing: 0.03em;
-  font-weight: 400;
 }
 
 /* ============================================================================

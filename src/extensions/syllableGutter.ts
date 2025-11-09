@@ -82,7 +82,7 @@ class SyllableGutterMarker extends GutterMarker {
   toDOM(): HTMLElement {
     const dom = document.createElement('div');
     dom.className = `syllable-count${this.hasErrors ? ' has-errors' : ''}`;
-    dom.textContent = `[${this.count}]`;
+    dom.textContent = this.count.toString();
     dom.title = this.hasErrors 
       ? `${this.count} syllables (some words failed to process)` 
       : `${this.count} syllables`;

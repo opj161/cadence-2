@@ -1,73 +1,21 @@
-# React + TypeScript + Vite
+# Cadence - Silbenanalysator für Songtexte
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ein spezialisierter Texteditor zur Echtzeit-Analyse von Silben in **deutschen** Songtexten.
 
-Currently, two official plugins are available:
+Dieses Tool verwendet CodeMirror 6 und das `hyphen/de` Paket, um Songschreibern ein direktes visuelles Feedback zur Silbenstruktur ihrer Texte zu geben.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Kernfunktionen
 
-## React Compiler
+* **Silbenzählung pro Zeile:** Zeigt die Gesamtzahl der Silben für jede Zeile in einer Leiste an.
+* **Inline-Silben-Trennung:** Stellt Wörter mit visuellen Trennern dar (z.B. `wun·der·bar`).
+* **Intelligente Formatierung:** Erkennt und formatiert automatisch Sektions-Überschriften (z.B. `[Refrain]`) und Kommentare (z.B. `# Text`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech-Stack
 
-## Expanding the ESLint configuration
+* React 19
+* TypeScript
+* Vite
+* Tailwind CSS v4
+* CodeMirror 6
+* `hyphen/de` für die deutsche Silbentrennung
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```

@@ -15,6 +15,7 @@ import { syllableGutter, syllableStateField, updateLineSyllables } from '../exte
 import { syllableDecorationsField } from '../extensions/syllableDecorations';
 import { smartFormatting } from '../extensions/smartFormatting';
 import { pasteHandler } from '../extensions/pasteHandler';
+import { editorTheme } from '../extensions/editorTheme';
 
 // Import utilities
 import { getWorkerManager } from '../utils/workerManager';
@@ -35,6 +36,7 @@ export function LyricEditor({
 
   // Set up extensions
   const extensions: Extension[] = [
+    editorTheme,
     syllableStateField,
     syllableGutter,
     ...(syllablesVisible ? [syllableDecorationsField] : []),
@@ -151,7 +153,7 @@ export function LyricEditor({
         extensions={extensions}
         onChange={handleChange}
         basicSetup={{
-          lineNumbers: true,
+          lineNumbers: false,
           highlightActiveLineGutter: true,
           highlightActiveLine: true,
           foldGutter: false,
