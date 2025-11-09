@@ -6,8 +6,8 @@
  */
 
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view';
-import { StateField, RangeSetBuilder } from '@codemirror/state';
-import { syllableStateField, updateSyllableEffect } from './syllableState';
+import { StateField } from '@codemirror/state';
+import { updateSyllableEffect } from './syllableState';
 import type { SyllableData } from '../types';
 
 /**
@@ -90,39 +90,39 @@ export const syllableDecorationsField = StateField.define<DecorationSet>({
   },
 
   update(decorations, transaction): DecorationSet {
-    // Map existing decorations through document changes
+    // 1. Map existing decorations through document changes
     decorations = decorations.map(transaction.changes);
 
-    // Check if syllable data was updated
+    // 2. Check if syllable data was updated
     const syllableUpdates = transaction.effects.filter(e => e.is(updateSyllableEffect));
     
     if (syllableUpdates.length > 0) {
-      const syllableState = transaction.state.field(syllableStateField, false);
-      if (!syllableState) return decorations;
-
-      // Build new decoration set
-      const builder = new RangeSetBuilder<Decoration>();
-      
-      // Collect all decorations from all lines
-      const allDecorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
-      
-      // Process each line that has syllable data
-      syllableState.lines.forEach((data, lineNum) => {
-        const lineDecorations = createLineDecorations(
+      // Process each update effect individually for efficiency
+      for (const effect of syllableUpdates) {
+        const { lineNumber, data } = effect.value;
+        
+        // Get the line from the current state
+        const doc = transaction.state.doc;
+        if (lineNumber + 1 > doc.lines) continue;
+        
+        const line = doc.line(lineNumber + 1);
+        
+        // 3. Create decorations for only the updated line
+        const newDecorationsForLine = createLineDecorations(
           { state: transaction.state } as EditorView,
-          lineNum,
+          lineNumber,
           data
         );
-        allDecorations.push(...lineDecorations);
-      });
-      
-      // Sort by position and add to builder
-      allDecorations.sort((a, b) => a.from - b.from);
-      for (const { from, to, decoration } of allDecorations) {
-        builder.add(from, to, decoration);
+        
+        // 4. Perform efficient, targeted update
+        decorations = decorations.update({
+          // Remove old decorations ONLY in the range of the changed line
+          filter: (from, to) => to < line.from || from > line.to,
+          // Add the new decorations for that line
+          add: newDecorationsForLine.map(d => d.decoration.range(d.from, d.to)),
+          sort: true
+        });
       }
-
-      decorations = builder.finish();
     }
 
     return decorations;
