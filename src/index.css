@@ -221,23 +221,10 @@
 }
 
 /* ============================================================================
- * SYLLABLE MARKER STYLES (Inline Hyphenation)
+ * SYLLABLE MARKER STYLES (Inline Hyphenation) - Now handled in editorTheme.ts
  * ============================================================================ */
 
-.syllable-marker {
-  color: hsl(var(--color-primary) / 0.5);
-  font-weight: 500;
-  margin: 0 0.5px;
-  user-select: none;
-  pointer-events: none;
-  font-size: 0.9em;
-  transition: color 150ms ease-in-out;
-}
-
-.cm-activeLine .syllable-marker {
-  color: hsl(var(--color-primary));
-  font-weight: 600;
-}
+/* Styles have been moved to editorTheme.ts for better CodeMirror integration */
 
 /* ============================================================================
  * ACTIVE LINE HIGHLIGHTING
@@ -252,35 +239,10 @@
 }
 
 /* ============================================================================
- * SMART FORMATTING STYLES
+ * SMART FORMATTING STYLES - Now handled in editorTheme.ts
  * ============================================================================ */
 
-/* Section headers - More prominent and modern */
-.cm-section-header {
-  font-weight: 700;
-  font-style: normal;
-  color: hsl(var(--color-accent));
-  background: hsl(var(--color-accent) / 0.15);
-  padding: 0.25rem 1rem;
-  margin-left: -0.5rem;
-  border-left: 3px solid hsl(var(--color-accent));
-  border-radius: 0 0.25rem 0.25rem 0;
-  display: inline-block;
-}
-
-/* Chord lines - Subtle but visible */
-.cm-chord-line {
-  font-style: italic;
-  color: hsl(45 90% 65%);
-  font-weight: 500;
-}
-
-/* Comment lines - More muted */
-.cm-comment-line {
-  color: hsl(var(--color-muted) / 0.7);
-  font-style: italic;
-  font-weight: 400;
-}
+/* Styles have been moved to editorTheme.ts for better CodeMirror integration */
 
 /* ============================================================================
  * SELECTION STYLES
