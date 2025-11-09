@@ -80,11 +80,10 @@
  * ============================================================================ */
 
 .lyric-editor-container {
-  height: 100%;
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
+  height: 90%;
+  width: 90%;
+  max-width: 90%;
+  padding: 2.50rem;
 }
 
 /* Modern Editor Card - Full bleed, no padding waste */
