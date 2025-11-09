@@ -19,10 +19,10 @@
   --color-foreground: 220 10% 96%;          /* Light gray text */
   
   /* UI colors */
-  --color-primary: 180 60% 50%;             /* Teal accent (toned down) */
+  --color-primary: 180 55% 48%;             /* Teal accent (more subtle) */
   --color-accent: 265 60% 65%;              /* Purple highlight */
   --color-muted: 220 10% 50%;               /* Muted text */
-  --color-border: 220 15% 18%;              /* Subtle borders (lighter) */
+  --color-border: 220 15% 20%;              /* Subtle borders (even lighter) */
   
   /* Editor specific */
   --color-editor-bg: 220 15% 12%;           /* Editor card background */
@@ -137,6 +137,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 0;
 }
 
 /* Clean syllable count badge */
@@ -145,12 +146,14 @@
   align-items: center;
   justify-content: center;
   min-width: 2.25rem;
-  height: 1.75rem;
+  height: 1.625rem;
   padding: 0 0.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
   font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+  vertical-align: middle;
   
   background: hsl(var(--color-active-line));
   color: hsl(var(--color-primary));

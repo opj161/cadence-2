@@ -12,7 +12,8 @@ import { type Range } from '@codemirror/state';
 import { ViewPlugin } from '@codemirror/view';
 
 // Regex patterns for detection
-const SECTION_HEADER_REGEX = /^\s*\[(Verse|Chorus|Bridge|Pre-Chorus|Intro|Outro|Hook|Refrain)(?:\s+\d+)?\]\s*$/i;
+// More flexible pattern - matches any text in square brackets at the start of a line
+const SECTION_HEADER_REGEX = /^\s*\[([^\]]+)\]\s*$/;
 const CHORD_LINE_REGEX = /^\s*\[[\w\d#b/\s]+\]\s*$/;
 const COMMENT_REGEX = /^#.*/;
 
