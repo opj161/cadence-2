@@ -8,7 +8,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import type { Extension } from '@codemirror/state';
-import type { EditorView } from '@codemirror/view';
+import { EditorView } from '@codemirror/view';
 
 // Import extensions
 import { syllableGutter } from '../extensions/syllableGutter';
@@ -16,7 +16,7 @@ import { syllableStateField, updateLineSyllables } from '../extensions/syllableS
 import { syllableDecorationsField } from '../extensions/syllableDecorations';
 import { smartFormatting } from '../extensions/smartFormatting';
 import { pasteHandler } from '../extensions/pasteHandler';
-import { editorTheme } from '../extensions/editorTheme';
+import { editorTheme, fontSizeCompartment } from '../extensions/editorTheme';
 
 // Import utilities
 import { getWorkerManager } from '../utils/workerManager';
@@ -25,7 +25,7 @@ import { getWorkerManager } from '../utils/workerManager';
 import type { LyricEditorProps } from '../types';
 
 export function LyricEditor({
-  initialValue = '',
+  value,
   onChange,
   onSyllableUpdate,
   syllablesVisible = true,
@@ -38,6 +38,9 @@ export function LyricEditor({
   // Set up extensions
   const extensions: Extension[] = [
     editorTheme,
+    fontSizeCompartment.of(EditorView.theme({
+      '&': { fontSize: `${fontSize}px` }
+    })),
     syllableStateField,
     syllableGutter,
     ...(syllablesVisible ? [syllableDecorationsField] : []),
@@ -171,10 +174,23 @@ export function LyricEditor({
     };
   }, []);
 
+  /**
+   * Update font size dynamically using compartment
+   */
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: fontSizeCompartment.reconfigure(EditorView.theme({
+          '&': { fontSize: `${fontSize}px` }
+        }))
+      });
+    }
+  }, [fontSize]);
+
   return (
-    <div className={`lyric-editor-container ${className}`} style={{ fontSize: `${fontSize}px` }}>
+    <div className={`lyric-editor-container ${className}`}>
       <CodeMirror
-        value={initialValue}
+        value={value}
         height="100%"
         extensions={extensions}
         onChange={handleChange}

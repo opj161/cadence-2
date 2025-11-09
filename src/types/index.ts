@@ -104,8 +104,8 @@ export interface SyllableUpdateEffect {
  * Props for the main LyricEditor component
  */
 export interface LyricEditorProps {
-  /** Initial content to display */
-  initialValue?: string;
+  /** Current content value (controlled component) */
+  value: string;
   /** Callback when content changes */
   onChange?: (value: string) => void;
   /** Callback when syllable data updates */

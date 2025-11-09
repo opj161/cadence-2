@@ -155,7 +155,7 @@ function App() {
             />
             <div className="flex-1 overflow-hidden">
               <LyricEditor
-                initialValue={INITIAL_CONTENT}
+                value={editorContent}
                 onSyllableUpdate={handleSyllableUpdate}
                 onChange={handleEditorChange}
                 syllablesVisible={syllablesVisible}

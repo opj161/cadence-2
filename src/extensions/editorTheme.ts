@@ -6,6 +6,12 @@
  */
 
 import { EditorView } from '@codemirror/view';
+import { Compartment } from '@codemirror/state';
+
+/**
+ * Compartment for dynamically reconfigurable font size
+ */
+export const fontSizeCompartment = new Compartment();
 
 export const editorTheme = EditorView.theme({
   // Better padding for content area
