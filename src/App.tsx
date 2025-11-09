@@ -115,17 +115,17 @@ function App() {
   }, [editorContent, syllableData]);
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-[hsl(var(--color-background))]">
+      {/* Header - Slimmer and more modern */}
+      <header className="bg-white dark:bg-[hsl(220,18%,10%)] border-b border-gray-200 dark:border-[hsl(220,15%,18%)]">
+        <div className="max-w-full mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
               Cadence
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Real-time Lyric Syllable Analyzer
-            </p>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+              Beta
+            </span>
           </div>
           <ThemeToggle />
         </div>
@@ -133,7 +133,7 @@ function App() {
 
       {/* Error Display */}
       {errors.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 w-full">
+        <div className="px-6 py-2">
           <ErrorDisplay
             errors={errors}
             onDismiss={handleDismissErrors}
@@ -141,10 +141,10 @@ function App() {
         </div>
       )}
 
-      {/* Main Editor */}
+      {/* Main Editor - Full width, no unnecessary padding */}
       <main className="flex-1 overflow-hidden flex flex-col">
-        <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full flex flex-col">
-          <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col">
+        <div className="h-full flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col">
             <Toolbar
               onClear={handleClear}
               onExport={handleExport}
@@ -172,15 +172,6 @@ function App() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            Built with CodeMirror 6, React, and Vite
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -1,30 +1,69 @@
 /**
  * Paste Handler Extension
  * 
- * Intelligently handles pasted text by:
- * - Splitting multi-line pastes into individual lines
- * - Preserving line breaks and formatting
- * - Maintaining cursor position after paste
+ * Intelligently handles pasted text with smart formatting:
+ * - Cleans up multiple blank lines
+ * - Trims trailing whitespace
+ * - Preserves intentional formatting
  */
 
 import { EditorView } from '@codemirror/view';
 
 /**
- * Handle paste events
+ * Clean and format pasted text
  */
-function handlePaste(event: ClipboardEvent): boolean {
+function cleanPastedText(text: string): string {
+  // Split into lines
+  let lines = text.split(/\r?\n/);
+  
+  // Trim trailing whitespace from each line but preserve leading spaces
+  lines = lines.map(line => line.trimEnd());
+  
+  // Remove excessive blank lines (more than 2 consecutive)
+  const cleaned: string[] = [];
+  let consecutiveBlankLines = 0;
+  
+  for (const line of lines) {
+    if (line.trim() === '') {
+      consecutiveBlankLines++;
+      // Only allow up to 2 blank lines in a row
+      if (consecutiveBlankLines <= 2) {
+        cleaned.push(line);
+      }
+    } else {
+      consecutiveBlankLines = 0;
+      cleaned.push(line);
+    }
+  }
+  
+  return cleaned.join('\n');
+}
+
+/**
+ * Handle paste events with smart formatting
+ */
+function handlePaste(event: ClipboardEvent, view: EditorView): boolean {
   const text = event.clipboardData?.getData('text/plain');
   
   if (!text) return false;
 
-  // Check if paste contains multiple lines
-  const lines = text.split(/\r?\n/);
+  // Clean the pasted text
+  const cleanedText = cleanPastedText(text);
   
-  console.log('[PasteHandler] Paste detected:', { lineCount: lines.length, textLength: text.length });
+  // If text was modified, prevent default and insert cleaned version
+  if (cleanedText !== text) {
+    event.preventDefault();
+    
+    const { from, to } = view.state.selection.main;
+    view.dispatch({
+      changes: { from, to, insert: cleanedText },
+      selection: { anchor: from + cleanedText.length }
+    });
+    
+    return true;
+  }
   
-  // Let CodeMirror handle all pastes naturally
-  // This ensures the React onChange callback is triggered
-  console.log('[PasteHandler] Using default paste behavior (triggers onChange)');
+  // Otherwise let default paste behavior handle it
   return false;
 }
 

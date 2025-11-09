@@ -1,7 +1,7 @@
 /**
  * Toolbar Component
  * 
- * Provides quick actions for common editor operations.
+ * Provides quick actions for common editor operations with modern design.
  */
 
 import { useState } from 'react';
@@ -32,13 +32,17 @@ export function Toolbar({
     setShowExportMenu(false);
   };
 
+  const buttonBase = "px-3 py-1.5 text-sm font-medium transition-all duration-200 rounded-md";
+  const buttonDefault = "text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-gray-400 dark:hover:border-gray-600";
+  const buttonActive = "text-white dark:text-white bg-cyan-500 dark:bg-cyan-600 border border-cyan-500 dark:border-cyan-600 hover:bg-cyan-600 dark:hover:bg-cyan-700 shadow-sm";
+
   return (
-    <div className={`toolbar flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`toolbar flex items-center gap-2 px-4 py-2.5 bg-white/50 dark:bg-[hsl(220,18%,10%)]/50 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 ${className}`}>
       {/* Clear button */}
       <button
         onClick={onClear}
-        className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-        title="Clear all text (Ctrl+K)"
+        className={`${buttonBase} ${buttonDefault}`}
+        title="Clear all text"
       >
         Clear
       </button>
@@ -47,25 +51,25 @@ export function Toolbar({
       <div className="relative">
         <button
           onClick={() => setShowExportMenu(!showExportMenu)}
-          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          className={`${buttonBase} ${buttonDefault}`}
           title="Export lyrics"
         >
           Export ▾
         </button>
         
         {showExportMenu && (
-          <div className="absolute left-0 mt-1 w-32 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-10">
+          <div className="absolute left-0 mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-10 overflow-hidden">
             <button
               onClick={() => handleExport('txt')}
-              className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+              className="w-full px-4 py-2.5 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              As Text (.txt)
+              Text File (.txt)
             </button>
             <button
               onClick={() => handleExport('html')}
-              className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+              className="w-full px-4 py-2.5 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              As HTML (.html)
+              HTML (.html)
             </button>
           </div>
         )}
@@ -74,33 +78,32 @@ export function Toolbar({
       {/* Toggle syllables */}
       <button
         onClick={onToggleSyllables}
-        className={`px-3 py-1.5 text-sm font-medium border rounded transition-colors ${
-          syllablesVisible
-            ? 'text-white bg-teal-600 border-teal-600 hover:bg-teal-700'
-            : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
-        }`}
+        className={`${buttonBase} ${syllablesVisible ? buttonActive : buttonDefault}`}
         title="Toggle syllable markers"
       >
-        {syllablesVisible ? '✓ ' : ''}Syllables
+        {syllablesVisible && (
+          <span className="mr-1.5">✓</span>
+        )}
+        Syllables
       </button>
 
       {/* Font size controls */}
       <div className="flex items-center gap-2 ml-auto">
-        <span className="text-xs text-gray-600 dark:text-gray-400">Font:</span>
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Size:</span>
         <button
-          onClick={() => onFontSizeChange(Math.max(12, fontSize - 2))}
-          className="w-8 h-8 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          onClick={() => onFontSizeChange(Math.max(12, fontSize - 1))}
+          className={`w-7 h-7 text-sm font-bold ${buttonBase} ${buttonDefault} disabled:opacity-40 disabled:cursor-not-allowed`}
           title="Decrease font size"
           disabled={fontSize <= 12}
         >
           −
         </button>
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-8 text-center">
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 w-8 text-center tabular-nums">
           {fontSize}
         </span>
         <button
-          onClick={() => onFontSizeChange(Math.min(24, fontSize + 2))}
-          className="w-8 h-8 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          onClick={() => onFontSizeChange(Math.min(24, fontSize + 1))}
+          className={`w-7 h-7 text-sm font-bold ${buttonBase} ${buttonDefault} disabled:opacity-40 disabled:cursor-not-allowed`}
           title="Increase font size"
           disabled={fontSize >= 24}
         >
