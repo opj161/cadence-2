@@ -43,6 +43,7 @@ export const editorTheme = EditorView.theme({
   // Content
   '.cm-content': {
     color: 'hsl(var(--color-foreground))',
+    caretColor: 'hsl(var(--color-primary))', // Explicit caret color
   },
   
   // Lines
@@ -106,9 +107,13 @@ export const editorTheme = EditorView.theme({
   
   // Syllable gutter
   '.cm-syllable-gutter': {
-    minWidth: '3rem',
-    paddingLeft: '0.5rem',
+    minWidth: '3.5rem',
+    paddingLeft: '0.75rem',
     paddingRight: '0.75rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
   },
   
   // Hyphenated words - subtle by default

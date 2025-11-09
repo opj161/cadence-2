@@ -6,7 +6,7 @@
  */
 
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view';
-import { StateField } from '@codemirror/state';
+import { StateField, type Range } from '@codemirror/state';
 import { updateSyllableEffect } from './syllableState';
 import type { SyllableData } from '../types';
 
@@ -45,8 +45,8 @@ function createLineDecorations(
   view: EditorView,
   lineNumber: number,
   data: SyllableData
-): Array<{ from: number; to: number; decoration: Decoration }> {
-  const decorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
+): Range<Decoration>[] {
+  const decorations: Range<Decoration>[] = [];
   const doc = view.state.doc;
   
   // Get the line (CodeMirror uses 1-based line numbers)
@@ -74,7 +74,7 @@ function createLineDecorations(
         widget: new HyphenatedWordWidget(wordData.hyphenated),
       });
 
-      decorations.push({ from, to, decoration });
+      decorations.push(decoration.range(from, to));
     }
   }
   
@@ -89,44 +89,42 @@ export const syllableDecorationsField = StateField.define<DecorationSet>({
     return Decoration.none;
   },
 
+  // --- START: PERFORMANCE FIX ---
+  // Rewrite the update function for incremental updates.
   update(decorations, transaction): DecorationSet {
-    // 1. Map existing decorations through document changes
+    // Map existing decorations through any document changes.
     decorations = decorations.map(transaction.changes);
-
-    // 2. Check if syllable data was updated
-    const syllableUpdates = transaction.effects.filter(e => e.is(updateSyllableEffect));
     
-    if (syllableUpdates.length > 0) {
-      // Process each update effect individually for efficiency
-      for (const effect of syllableUpdates) {
+    // Check for our specific effect.
+    for (const effect of transaction.effects) {
+      if (effect.is(updateSyllableEffect)) {
         const { lineNumber, data } = effect.value;
-        
-        // Get the line from the current state
         const doc = transaction.state.doc;
+        
+        // Ensure the line still exists
         if (lineNumber + 1 > doc.lines) continue;
-        
         const line = doc.line(lineNumber + 1);
-        
-        // 3. Create decorations for only the updated line
+
+        // Create decorations for the single updated line.
         const newDecorationsForLine = createLineDecorations(
           { state: transaction.state } as EditorView,
           lineNumber,
           data
         );
         
-        // 4. Perform efficient, targeted update
+        // Perform an efficient, targeted update.
         decorations = decorations.update({
-          // Remove old decorations ONLY in the range of the changed line
-          filter: (from, to) => to < line.from || from > line.to,
-          // Add the new decorations for that line
-          add: newDecorationsForLine.map(d => d.decoration.range(d.from, d.to)),
+          // Remove old decorations ONLY in the range of the changed line.
+          filter: (from) => from < line.from || from > line.to,
+          // Add the new decorations for that line.
+          add: newDecorationsForLine,
           sort: true
         });
       }
     }
-
     return decorations;
   },
+  // --- END: PERFORMANCE FIX ---
 
   provide: f => EditorView.decorations.from(f),
 });

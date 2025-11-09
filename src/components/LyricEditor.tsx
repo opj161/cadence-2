@@ -5,7 +5,7 @@
  * for real-time syllable counting and lyric formatting.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import type { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
@@ -34,18 +34,30 @@ export function LyricEditor({
 }: LyricEditorProps) {
   const viewRef = useRef<EditorView | null>(null);
 
-  // Set up extensions
-  const extensions: Extension[] = [
-    editorTheme,
-    fontSizeCompartment.of(EditorView.theme({
-      '&': { fontSize: `${fontSize}px` }
-    })),
-    syllableStateField,
-    syllableGutter,
-    ...(syllablesVisible ? [syllableDecorationsField] : []),
-    smartFormatting,
-    pasteHandler,
-  ];
+  // --- START: CRITICAL FIX ---
+  // Memoize the extensions array to prevent re-creation on every render.
+  // This is the root cause of the theme and state fields not applying.
+  // Dependencies: ONLY syllablesVisible (changes extension set)
+  // fontSize is handled via compartment reconfiguration in useEffect below
+  const extensions = useMemo<Extension[]>(() => {
+    const initialExtensions: Extension[] = [
+      editorTheme,
+      fontSizeCompartment.of(EditorView.theme({
+        '&': { fontSize: '16px' } // Default only - dynamic updates via compartment
+      })),
+      syllableStateField,
+      syllableGutter,
+      smartFormatting,
+      pasteHandler,
+    ];
+
+    if (syllablesVisible) {
+      initialExtensions.push(syllableDecorationsField);
+    }
+
+    return initialExtensions;
+  }, [syllablesVisible]); // <-- CRITICAL: Only syllablesVisible, NOT fontSize
+  // --- END: CRITICAL FIX ---
 
   /**
    * Process a line of text for syllable counting
@@ -101,10 +113,9 @@ export function LyricEditor({
       changedLines.forEach(lineNumber => {
         if (lineNumber + 1 <= state.doc.lines) {
           const line = state.doc.line(lineNumber + 1);
-          // Skip empty lines
-          if (line.text.trim().length > 0) {
-            processLine(lineNumber, line.text);
-          }
+          // ALWAYS process the line. The worker will handle empty text by returning 0s,
+          // which correctly updates/clears the state for that line.
+          processLine(lineNumber, line.text);
         }
       });
     }

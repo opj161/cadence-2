@@ -1,0 +1,17 @@
+cm-focused
+cm-scroller
+cm-content
+cm-line
+cm-gutters
+cm-activeLine
+cm-activeLineGutter
+cm-selectionBackground
+cm-selectionMatch
+cm-cursor
+cm-gutterElement
+cm-syllable-gutter
+hyphenated-word
+cm-section-header
+cm-comment-line
+syllable-count
+lyric-editor-container
