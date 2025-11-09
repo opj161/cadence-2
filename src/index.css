@@ -1,0 +1,210 @@
+/* Import Tailwind CSS v4 */
+@import "tailwindcss";
+
+/* Configure dark mode with class selector */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom theme variables for Cadence */
+@theme {
+  /* Custom font for lyrics (clean, readable) */
+  --font-lyric: ui-sans-serif, system-ui, sans-serif;
+  
+  /* Custom colors for syllable markers and gutters */
+  --color-syllable-marker: oklch(0.7 0.15 240);
+  --color-gutter-text: oklch(0.5 0 0);
+  --color-gutter-bg: oklch(0.98 0 0);
+  
+  /* Dark mode colors */
+  --color-syllable-marker-dark: oklch(0.75 0.15 260);
+  --color-gutter-text-dark: oklch(0.7 0 0);
+  --color-gutter-bg-dark: oklch(0.2 0 0);
+  
+  /* Custom spacing for editor */
+  --spacing-editor-padding: 1rem;
+}
+
+/* Editor Container Styles */
+.lyric-editor-container {
+  height: 100%;
+  width: 100%;
+}
+
+.lyric-editor-container .cm-editor {
+  height: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  background: white;
+}
+
+.dark .lyric-editor-container .cm-editor {
+  background: oklch(0.15 0 0);
+  color: oklch(0.85 0 0);
+}
+
+.lyric-editor-container .cm-scroller {
+  overflow: auto;
+  font-family: inherit;
+}
+
+.dark .lyric-editor-container .cm-content {
+  color: oklch(0.85 0 0);
+}
+
+.dark .lyric-editor-container .cm-gutters {
+  background: oklch(0.18 0 0);
+  border-right-color: oklch(0.25 0 0);
+}
+
+.dark .lyric-editor-container .cm-line {
+  color: oklch(0.85 0 0);
+}
+
+/* Syllable Gutter Styles */
+.cm-syllable-gutter {
+  min-width: 3rem;
+  padding: 0 0.5rem;
+  background: var(--color-gutter-bg);
+  border-right: 1px solid oklch(0.9 0 0);
+}
+
+.dark .cm-syllable-gutter {
+  background: var(--color-gutter-bg-dark);
+  border-right-color: oklch(0.25 0 0);
+}
+
+.syllable-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gutter-text);
+  background: oklch(0.95 0 0);
+  border-radius: 0.25rem;
+}
+
+.dark .syllable-count {
+  color: var(--color-gutter-text-dark);
+  background: oklch(0.25 0 0);
+}
+
+.syllable-count.has-errors {
+  background: oklch(0.95 0.08 25);
+  color: oklch(0.5 0.15 25);
+}
+
+.dark .syllable-count.has-errors {
+  background: oklch(0.3 0.08 25);
+  color: oklch(0.7 0.15 25);
+}
+
+/* Syllable Marker Styles */
+.syllable-marker {
+  color: var(--color-syllable-marker);
+  font-weight: bold;
+  margin: 0 1px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.dark .syllable-marker {
+  color: var(--color-syllable-marker-dark);
+}
+
+/* Hyphenated Word Styles (replacement decorations) */
+.hyphenated-word {
+  color: inherit;
+  letter-spacing: 0.02em;
+}
+
+/* Active Line Highlighting */
+.cm-activeLine {
+  background-color: oklch(0.96 0.03 240) !important;
+}
+
+.dark .cm-activeLine {
+  background-color: oklch(0.25 0.03 240) !important;
+}
+
+/* Smart Formatting Styles */
+.cm-section-header {
+  font-weight: bold;
+  color: oklch(0.4 0.15 260);
+  background: oklch(0.97 0.05 260);
+  padding-left: 0.5rem;
+  border-left: 3px solid oklch(0.6 0.2 260);
+}
+
+.dark .cm-section-header {
+  color: oklch(0.75 0.15 260);
+  background: oklch(0.2 0.05 260);
+  border-left-color: oklch(0.5 0.2 260);
+}
+
+.cm-chord-line {
+  font-style: italic;
+  color: oklch(0.45 0.12 30);
+  background: oklch(0.97 0.03 30);
+}
+
+.dark .cm-chord-line {
+  color: oklch(0.7 0.12 30);
+  background: oklch(0.2 0.03 30);
+}
+
+.cm-comment-line {
+  color: oklch(0.6 0 0);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.dark .cm-comment-line {
+  color: oklch(0.5 0 0);
+}
+
+/* Active Line Highlighting */
+.cm-activeLine {
+  background-color: oklch(0.98 0 0) !important;
+}
+
+.dark .cm-activeLine {
+  background-color: oklch(0.18 0 0) !important;
+}
+
+.cm-activeLineGutter {
+  background-color: oklch(0.95 0 0) !important;
+}
+
+.dark .cm-activeLineGutter {
+  background-color: oklch(0.22 0 0) !important;
+}
+
+/* Selection Styles */
+.cm-selectionBackground {
+  background-color: oklch(0.85 0.1 240) !important;
+}
+
+.dark .cm-selectionBackground {
+  background-color: oklch(0.3 0.1 240) !important;
+}
+
+/* Cursor */
+.cm-cursor {
+  border-left-color: oklch(0.3 0 0);
+}
+
+.dark .cm-cursor {
+  border-left-color: oklch(0.8 0 0);
+}
+
+/* Focused Editor */
+.cm-focused .cm-selectionBackground {
+  background-color: oklch(0.80 0.12 240) !important;
+}
+
+.dark .cm-focused .cm-selectionBackground {
+  background-color: oklch(0.35 0.12 240) !important;
+}
