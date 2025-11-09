@@ -12,17 +12,17 @@ import { StatisticsPanel } from './components/StatisticsPanel';
 import { ThemeToggle } from './components/ThemeToggle';
 import type { SyllableData } from './types';
 
-const INITIAL_CONTENT = `[Verse 1]
-Write your lyrics here
-Each line will show syllable counts
+const INITIAL_CONTENT = `[Strophe 1]
+Schreib hier deine Texte
+Jede Zeile zeigt die Silbenanzahl
 
-[Chorus]
-Try typing some words
-Watch the syllable counter
-See the markers appear
+[Refrain]
+Tippe ein paar Wörter
+Beobachte den Silbenzähler
+Sieh, wie die Markierungen erscheinen
 
-# This is a comment
-# Comments start with #`;
+# Dies ist ein Kommentar
+# Kommentare beginnen mit #`;
 
 function App() {
   const [errors, setErrors] = useState<string[]>([]);
