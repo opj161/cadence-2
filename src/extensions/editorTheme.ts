@@ -10,47 +10,35 @@ import { EditorView } from '@codemirror/view';
 export const editorTheme = EditorView.theme({
   // Better padding for content area
   '.cm-scroller': {
-    padding: '2rem 3rem 2rem 2rem',
+    padding: '2rem 3rem 2rem 1.5rem', // Slightly adjust left padding for better balance
   },
   
-  // Syllable marker styling - visible but not distracting
-  '.syllable-marker': {
-    color: 'hsl(var(--color-primary) / 0.5)',
-    fontWeight: '500',
-    margin: '0 0.5px',
-    userSelect: 'none',
-    pointerEvents: 'none',
-    fontSize: '0.9em',
+  // The new, correct way to style hyphenated words - subtle by default
+  '.hyphenated-word': {
+    color: 'hsl(var(--color-muted) / 0.6)', // Subtle by default
     transition: 'color 150ms ease-in-out',
   },
   
-  // Style for words with syllable markers
-  '.hyphenated-word': {
-    letterSpacing: '0.02em', // Slightly more spacing for readability
-  },
-  
-  // On the active line, make markers more prominent
-  '.cm-activeLine .syllable-marker': {
+  // On the active line, make the hyphenated words more prominent
+  '.cm-activeLine .hyphenated-word': {
     color: 'hsl(var(--color-primary))',
-    fontWeight: '600',
   },
   
-  // Section headers - make them stand out more
+  // Refined Section Header style
   '.cm-section-header': {
     fontWeight: '700',
     color: 'hsl(var(--color-accent))',
-    background: 'hsl(var(--color-accent) / 0.15)',
-    paddingLeft: '1rem',
-    paddingRight: '1rem',
-    marginLeft: '-0.5rem',
-    borderLeft: '3px solid hsl(var(--color-accent))',
-    borderRadius: '0 0.25rem 0.25rem 0',
+    background: 'hsl(var(--color-accent) / 0.1)',
+    padding: '0.2rem 0.75rem',
+    borderRadius: 'var(--radius-base)',
+    display: 'inline-block', // Better than line decoration
   },
   
-  // Comment lines - more subtle
+  // Refined Comment Line style
   '.cm-comment-line': {
-    color: 'hsl(var(--color-muted) / 0.7)',
+    color: 'hsl(var(--color-muted) / 0.6)',
     fontStyle: 'italic',
+    position: 'relative', // for pseudo-elements if needed
   },
   
   // Improve gutter appearance

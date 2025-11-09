@@ -11,7 +11,8 @@ import type { Extension } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 
 // Import extensions
-import { syllableGutter, syllableStateField, updateLineSyllables } from '../extensions/syllableGutter';
+import { syllableGutter } from '../extensions/syllableGutter';
+import { syllableStateField, updateLineSyllables } from '../extensions/syllableState';
 import { syllableDecorationsField } from '../extensions/syllableDecorations';
 import { smartFormatting } from '../extensions/smartFormatting';
 import { pasteHandler } from '../extensions/pasteHandler';
@@ -104,7 +105,7 @@ export function LyricEditor({
   /**
    * Handle document changes
    */
-  const handleChange = useCallback((value: string) => {
+  const handleChange = useCallback((value: string, viewUpdate?: import('@codemirror/view').ViewUpdate) => {
     console.log('[LyricEditor] handleChange called:', { valueLength: value.length, linesCount: value.split('\n').length });
     
     // Call parent onChange
@@ -112,7 +113,32 @@ export function LyricEditor({
       onChange(value);
     }
 
-    // Debounce processing
+    // If we have viewUpdate info, process only changed lines for efficiency
+    if (viewUpdate && viewUpdate.docChanged) {
+      const changedLines = new Set<number>();
+      
+      viewUpdate.changes.iterChanges((fromA, toA) => {
+        const fromLine = viewUpdate.startState.doc.lineAt(fromA);
+        const toLine = viewUpdate.startState.doc.lineAt(toA);
+        for (let i = fromLine.number; i <= toLine.number; i++) {
+          changedLines.add(i - 1); // Convert to 0-based
+        }
+      });
+
+      const { state } = viewUpdate;
+      changedLines.forEach(lineNumber => {
+        if (lineNumber + 1 <= state.doc.lines) {
+          const line = state.doc.line(lineNumber + 1);
+          // Skip empty lines
+          if (line.text.trim().length > 0) {
+            processLine(lineNumber, line.text);
+          }
+        }
+      });
+      return; // Don't trigger debounced processing
+    }
+
+    // Fallback: Debounce processing for cases without viewUpdate
     if (processingTimeoutRef.current) {
       clearTimeout(processingTimeoutRef.current);
     }
@@ -121,7 +147,7 @@ export function LyricEditor({
       console.log('[LyricEditor] Debounce timeout complete, calling processVisibleLines');
       processVisibleLines();
     }, 300); // 300ms debounce
-  }, [onChange, processVisibleLines]);
+  }, [onChange, processLine, processVisibleLines]);
 
   /**
    * Process lines on initial mount

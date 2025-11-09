@@ -1,43 +1,45 @@
 /**
  * Syllable Decorations Extension
  * 
- * Displays inline syllable break markers (·) at syllable boundaries within words.
- * Uses a more efficient mark decoration approach instead of widget replacement.
- * Integrates with syllable state to show visual syllable boundaries.
+ * Displays inline syllable breaks by replacing words with their hyphenated versions.
+ * Uses Decoration.replace to swap entire words while preserving text flow and selectability.
  */
 
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view';
 import { StateField, RangeSetBuilder } from '@codemirror/state';
-import { syllableStateField, updateSyllableEffect } from './syllableGutter';
+import { syllableStateField, updateSyllableEffect } from './syllableState';
 import type { SyllableData } from '../types';
 
 /**
- * Widget for displaying a syllable break marker
+ * Widget that displays a word with inline syllable markers.
+ * Replaces the original word entirely to maintain proper text flow.
  */
-class SyllableMarkerWidget extends WidgetType {
-  constructor() {
+class HyphenatedWordWidget extends WidgetType {
+  display: string;
+
+  constructor(display: string) {
     super();
+    this.display = display;
   }
 
   toDOM(): HTMLElement {
     const span = document.createElement('span');
-    span.className = 'syllable-marker';
-    span.textContent = '·';
-    span.setAttribute('aria-hidden', 'true');
+    span.className = 'hyphenated-word';
+    span.textContent = this.display;
     return span;
   }
 
-  eq(other: SyllableMarkerWidget): boolean {
-    return other instanceof SyllableMarkerWidget;
+  eq(other: HyphenatedWordWidget): boolean {
+    return other instanceof HyphenatedWordWidget && this.display === other.display;
   }
 
   ignoreEvent(): boolean {
-    return true; // Don't interfere with editing
+    return false; // Allow interaction with the text
   }
 }
 
 /**
- * Create decorations for syllable markers on a line
+ * Create decorations for a single line by replacing words with their hyphenated versions.
  */
 function createLineDecorations(
   view: EditorView,
@@ -53,42 +55,27 @@ function createLineDecorations(
   const line = doc.line(lineNumber + 1);
   const lineText = line.text;
   
-  // Find each word and add syllable markers
+  // Find each word in the line
   const wordRegex = /\S+/g;
-  const matches = Array.from(lineText.matchAll(wordRegex));
-  
-  for (let i = 0; i < matches.length && i < data.words.length; i++) {
-    const match = matches[i];
-    const wordData = data.words[i];
-    
-    // Only add markers for words with multiple syllables
-    if (!wordData.success || wordData.count <= 1 || wordData.positions.length === 0) {
-      continue;
-    }
-    
-    // Calculate word start position in document
-    const wordStart = line.from + match.index!;
-    
-    // Add a marker widget at each syllable boundary
-    for (const position of wordData.positions) {
-      const markerPos = wordStart + position;
+  let match;
+  let wordIndex = 0;
+
+  // Iterate over words found in the line text
+  while ((match = wordRegex.exec(lineText)) !== null && wordIndex < data.words.length) {
+    const wordData = data.words[wordIndex];
+    wordIndex++;
+
+    // Only replace words with more than one syllable that were processed successfully
+    if (wordData.success && wordData.count > 1) {
+      const from = line.from + match.index;
+      const to = from + match[0].length;
       
-      // Ensure position is within the word bounds
-      if (markerPos > wordStart && markerPos < wordStart + match[0].length) {
-        const decoration = Decoration.widget({
-          widget: new SyllableMarkerWidget(),
-          side: 0, // Place at the position (not before or after)
-        });
-        
-        decorations.push({ from: markerPos, to: markerPos, decoration });
-      }
+      const decoration = Decoration.replace({
+        widget: new HyphenatedWordWidget(wordData.hyphenated),
+      });
+
+      decorations.push({ from, to, decoration });
     }
-    
-    // Mark the entire word with a class for styling
-    const wordMark = Decoration.mark({
-      class: 'hyphenated-word',
-    });
-    decorations.push({ from: wordStart, to: wordStart + match[0].length, decoration: wordMark });
   }
   
   return decorations;
