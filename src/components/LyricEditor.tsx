@@ -26,6 +26,8 @@ export function LyricEditor({
   initialValue = '',
   onChange,
   onSyllableUpdate,
+  syllablesVisible = true,
+  fontSize = 16,
   className = '',
 }: LyricEditorProps) {
   const viewRef = useRef<EditorView | null>(null);
@@ -35,7 +37,7 @@ export function LyricEditor({
   const extensions: Extension[] = [
     syllableStateField,
     syllableGutter,
-    syllableDecorationsField,
+    ...(syllablesVisible ? [syllableDecorationsField] : []),
     smartFormatting,
     pasteHandler,
   ];
@@ -142,7 +144,7 @@ export function LyricEditor({
   }, []);
 
   return (
-    <div className={`lyric-editor-container ${className}`}>
+    <div className={`lyric-editor-container ${className}`} style={{ fontSize: `${fontSize}px` }}>
       <CodeMirror
         value={initialValue}
         height="100%"
