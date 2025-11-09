@@ -33,7 +33,6 @@ export function LyricEditor({
   className = '',
 }: LyricEditorProps) {
   const viewRef = useRef<EditorView | null>(null);
-  const processingTimeoutRef = useRef<number | null>(null);
 
   // Set up extensions
   const extensions: Extension[] = [
@@ -76,36 +75,6 @@ export function LyricEditor({
   }, [onSyllableUpdate]);
 
   /**
-   * Process all visible lines in the editor
-   */
-  const processVisibleLines = useCallback(() => {
-    if (!viewRef.current) {
-      console.warn('[LyricEditor] processVisibleLines called but viewRef is null');
-      return;
-    }
-
-    const { state } = viewRef.current;
-    const doc = state.doc;
-
-    console.log('[LyricEditor] Processing visible lines:', { totalLines: doc.lines });
-
-    // Process each line
-    for (let i = 1; i <= doc.lines; i++) {
-      const line = doc.line(i);
-      const lineNumber = i - 1; // Convert to 0-based
-      const text = line.text;
-
-      // Skip empty lines
-      if (text.trim().length === 0) {
-        console.log(`[LyricEditor] Skipping empty line ${lineNumber}`);
-        continue;
-      }
-
-      processLine(lineNumber, text);
-    }
-  }, [processLine]);
-
-  /**
    * Handle document changes
    */
   const handleChange = useCallback((value: string, viewUpdate?: import('@codemirror/view').ViewUpdate) => {
@@ -116,7 +85,7 @@ export function LyricEditor({
       onChange(value);
     }
 
-    // If we have viewUpdate info, process only changed lines for efficiency
+    // Process only changed lines for efficiency
     if (viewUpdate && viewUpdate.docChanged) {
       const changedLines = new Set<number>();
       
@@ -138,41 +107,35 @@ export function LyricEditor({
           }
         }
       });
-      return; // Don't trigger debounced processing
     }
-
-    // Fallback: Debounce processing for cases without viewUpdate
-    if (processingTimeoutRef.current) {
-      clearTimeout(processingTimeoutRef.current);
-    }
-
-    processingTimeoutRef.current = window.setTimeout(() => {
-      console.log('[LyricEditor] Debounce timeout complete, calling processVisibleLines');
-      processVisibleLines();
-    }, 300); // 300ms debounce
-  }, [onChange, processLine, processVisibleLines]);
+  }, [onChange, processLine]);
 
   /**
-   * Process lines on initial mount
+   * Process all lines on initial mount
    */
   useEffect(() => {
-    const timer = setTimeout(() => {
-      processVisibleLines();
-    }, 100);
+    if (!viewRef.current) return;
 
-    return () => clearTimeout(timer);
-  }, [processVisibleLines]);
+    const { state } = viewRef.current;
+    const doc = state.doc;
 
-  /**
-   * Clean up processing timeout on unmount
-   */
-  useEffect(() => {
-    return () => {
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
+    console.log('[LyricEditor] Processing all lines on mount:', { totalLines: doc.lines });
+
+    // Process each line
+    for (let i = 1; i <= doc.lines; i++) {
+      const line = doc.line(i);
+      const lineNumber = i - 1; // Convert to 0-based
+      const text = line.text;
+
+      // Skip empty lines
+      if (text.trim().length === 0) {
+        console.log(`[LyricEditor] Skipping empty line ${lineNumber}`);
+        continue;
       }
-    };
-  }, []);
+
+      processLine(lineNumber, text);
+    }
+  }, [processLine]);
 
   /**
    * Update font size dynamically using compartment
