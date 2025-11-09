@@ -86,35 +86,6 @@
   padding: 2.50rem;
 }
 
-/* Modern Editor Card - Full bleed, no padding waste */
-.lyric-editor-container .cm-editor {
-  height: 100%;
-  min-height: 400px;
-  font-family: var(--font-lyric);
-  font-size: 17px;
-  line-height: 1.7;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  
-  background: hsl(var(--color-editor-bg));
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  
-  overflow: hidden;
-}
-
-/* Strong focus state - Clear visual feedback */
-.lyric-editor-container .cm-focused {
-  outline: none;
-  box-shadow: inset 0 0 0 2px hsl(var(--color-primary) / 0.5);
-}
-
-.lyric-editor-container .cm-scroller {
-  overflow: auto;
-  font-family: inherit;
-}
-
 /* Modern scrollbar - Thinner and more subtle */
 .lyric-editor-container .cm-scroller::-webkit-scrollbar {
   width: 6px;
@@ -133,39 +104,6 @@
 
 .lyric-editor-container .cm-scroller::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--color-primary) / 0.5);
-}
-
-/* Content text color - Maximum contrast */
-.dark .lyric-editor-container .cm-content {
-  color: hsl(var(--color-foreground));
-}
-
-:root:not(.dark) .lyric-editor-container .cm-content {
-  color: hsl(var(--color-foreground));
-}
-
-/* Modern gutter - Minimal and clean */
-.dark .lyric-editor-container .cm-gutters {
-  background: hsl(var(--color-gutter-bg));
-  border-right: 1px solid hsl(var(--color-border));
-  padding: 0 1.25rem 0 1rem;
-  min-width: fit-content;
-}
-
-:root:not(.dark) .lyric-editor-container .cm-gutters {
-  background: hsl(var(--color-gutter-bg));
-  border-right: 1px solid hsl(var(--color-border));
-  padding: 0 1.25rem 0 1rem;
-}
-
-.dark .lyric-editor-container .cm-line {
-  color: hsl(var(--color-foreground));
-  padding: 0.125rem 0;
-}
-
-:root:not(.dark) .lyric-editor-container .cm-line {
-  color: hsl(var(--color-foreground));
-  padding: 0.125rem 0;
 }
 
 /* ============================================================================
@@ -226,48 +164,14 @@
 /* Styles have been moved to editorTheme.ts for better CodeMirror integration */
 
 /* ============================================================================
- * ACTIVE LINE HIGHLIGHTING
- * ============================================================================ */
-
-.cm-activeLine {
-  background: hsl(var(--color-active-line)) !important;
-}
-
-.cm-activeLineGutter {
-  background: hsl(var(--color-active-line)) !important;
-}
-
-/* ============================================================================
  * SMART FORMATTING STYLES - Now handled in editorTheme.ts
  * ============================================================================ */
 
 /* Styles have been moved to editorTheme.ts for better CodeMirror integration */
 
 /* ============================================================================
- * SELECTION STYLES
+ * CURSOR ANIMATION
  * ============================================================================ */
-
-.cm-selectionBackground {
-  background: hsl(var(--color-primary) / 0.25) !important;
-}
-
-.cm-focused .cm-selectionBackground {
-  background: hsl(var(--color-primary) / 0.3) !important;
-}
-
-.cm-selectionMatch {
-  background: hsl(var(--color-primary) / 0.2) !important;
-}
-
-/* ============================================================================
- * CURSOR
- * ============================================================================ */
-
-.cm-cursor {
-  border-left: 2.5px solid hsl(var(--color-primary));
-  border-left-width: 2.5px;
-  animation: cursor-pulse 1s ease-in-out infinite;
-}
 
 @keyframes cursor-pulse {
   0%, 100% {
@@ -276,27 +180,6 @@
   50% {
     opacity: 0.6;
   }
-}
-
-/* ============================================================================
- * LINE NUMBERS
- * ============================================================================ */
-
-/* Line numbers styling - Cleaner */
-.cm-gutterElement {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: hsl(var(--color-muted) / 0.4);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-  padding: 0 0.75rem 0 0;
-  min-width: 2.5rem;
-  text-align: right;
-}
-
-.cm-activeLineGutter .cm-gutterElement {
-  color: hsl(var(--color-primary));
-  font-weight: 700;
 }
 
 /* ============================================================================
