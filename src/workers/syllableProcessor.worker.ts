@@ -8,6 +8,16 @@
 import { hyphenateSync } from 'hyphen/de';
 import type { WorkerRequest, WorkerResponse, SyllableData, WordSyllables } from '../types';
 
+// Simple, self-contained logger for worker environment
+// In production builds, this will be tree-shaken if unused
+const isDevelopment = import.meta.env.DEV;
+
+function logDebug(message: string, data?: unknown): void {
+  if (isDevelopment) {
+    console.log(`[Worker] ${message}`, data !== undefined ? data : '');
+  }
+}
+
 /**
  * Process a single word to count syllables
  */
@@ -90,12 +100,12 @@ function processLine(text: string): SyllableData {
  */
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const request = event.data;
-  console.log('[Worker] Received request:', { id: request.id, type: request.type, lineNumber: request.lineNumber, textLength: request.text.length });
+  logDebug('Received request', { id: request.id, type: request.type, lineNumber: request.lineNumber });
 
   try {
     if (request.type === 'process-line') {
       const data = processLine(request.text);
-      console.log('[Worker] Processed line:', { id: request.id, lineNumber: request.lineNumber, totalSyllables: data.totalSyllables, wordCount: data.words.length });
+      logDebug('Processed line', { id: request.id, totalSyllables: data.totalSyllables });
       
       const response: WorkerResponse = {
         id: request.id,
@@ -118,5 +128,5 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   }
 };
 
-// Log when worker is ready
-console.log('[Worker] Syllable processor worker loaded');
+logDebug('Syllable processor worker loaded');
+

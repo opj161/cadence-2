@@ -6,23 +6,28 @@
  */
 
 import type { WorkerRequest, WorkerResponse, SyllableData } from '../types';
+import { logDebug, logError } from './logger';
+
+type PromiseExecutor<T> = {
+  resolve: (data: T) => void;
+  reject: (error: Error) => void;
+};
 
 export class WorkerManager {
   private worker: Worker;
   private requestId: number = 0;
-  private pendingRequests: Map<number, {
-    resolve: (data: SyllableData) => void;
-    reject: (error: Error) => void;
-  }> = new Map();
+  private pendingRequests: Map<number, PromiseExecutor<SyllableData>> = new Map();
+  // Track pending requests by line number to handle cancellation
+  private lineRequestMap: Map<number, number> = new Map();
 
   constructor() {
-    console.log('[WorkerManager] Initializing Web Worker...');
+    logDebug('WorkerManager', 'Initializing Web Worker...');
     // Create the Web Worker using Vite's special syntax
     this.worker = new Worker(
       new URL('../workers/syllableProcessor.worker.ts', import.meta.url),
       { type: 'module' }
     );
-    console.log('[WorkerManager] Worker created successfully');
+    logDebug('WorkerManager', 'Worker created successfully');
 
     // Set up message handler
     this.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
@@ -31,12 +36,13 @@ export class WorkerManager {
 
     // Set up error handler
     this.worker.onerror = (error) => {
-      console.error('[WorkerManager] Worker error:', error);
+      logError('WorkerManager', 'Worker error:', error);
       // Reject all pending requests
       this.pendingRequests.forEach(({ reject }) => {
-        reject(new Error('Worker encountered an error'));
+        reject(new Error('Worker encountered a critical error'));
       });
       this.pendingRequests.clear();
+      this.lineRequestMap.clear();
     };
   }
 
@@ -44,12 +50,23 @@ export class WorkerManager {
    * Process a line of text and return syllable data
    */
   processLine(text: string, lineNumber: number): Promise<SyllableData> {
+    // Cancel any existing request for the same line to prevent race conditions
+    if (this.lineRequestMap.has(lineNumber)) {
+      const oldRequestId = this.lineRequestMap.get(lineNumber)!;
+      const pending = this.pendingRequests.get(oldRequestId);
+      if (pending) {
+        pending.reject(new Error('Request superseded'));
+        this.pendingRequests.delete(oldRequestId);
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const id = this.requestId++;
-      console.log('[WorkerManager] Sending request:', { id, lineNumber, textLength: text.length });
+      logDebug('WorkerManager', 'Sending request', { id, lineNumber, textLength: text.length });
       
       // Store promise handlers
       this.pendingRequests.set(id, { resolve, reject });
+      this.lineRequestMap.set(lineNumber, id); // Track current request ID for this line
 
       // Send request to worker
       const request: WorkerRequest = {
@@ -62,8 +79,9 @@ export class WorkerManager {
       try {
         this.worker.postMessage(request);
       } catch (error) {
-        console.error('[WorkerManager] Failed to send message:', error);
+        logError('WorkerManager', 'Failed to send message:', error);
         this.pendingRequests.delete(id);
+        this.lineRequestMap.delete(lineNumber);
         reject(error instanceof Error ? error : new Error('Failed to send message to worker'));
       }
     });
@@ -73,12 +91,21 @@ export class WorkerManager {
    * Handle response from worker
    */
   private handleResponse(response: WorkerResponse): void {
-    console.log('[WorkerManager] Received response:', { id: response.id, type: response.type, hasData: !!response.data, hasError: !!response.error });
+    logDebug('WorkerManager', 'Received response', { id: response.id, type: response.type });
     
     const pending = this.pendingRequests.get(response.id);
     
+    // Clean up line request map regardless of whether the request is found
+    if (response.lineNumber !== undefined) {
+      // Only clear if it's the current request for that line
+      if (this.lineRequestMap.get(response.lineNumber) === response.id) {
+        this.lineRequestMap.delete(response.lineNumber);
+      }
+    }
+    
     if (!pending) {
-      console.warn('[WorkerManager] Received response for unknown request:', response.id);
+      // This is expected if the request was superseded, so we don't warn.
+      logDebug('WorkerManager', `Received response for a superseded or unknown request ID: ${response.id}`);
       return;
     }
 
@@ -104,6 +131,7 @@ export class WorkerManager {
       reject(new Error('Worker was terminated'));
     });
     this.pendingRequests.clear();
+    this.lineRequestMap.clear();
   }
 
   /**

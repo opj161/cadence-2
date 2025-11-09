@@ -114,6 +114,8 @@ export interface LyricEditorProps {
   syllablesVisible?: boolean;
   /** Font size for editor text */
   fontSize?: number;
+  /** Whether dark mode is active */
+  isDarkMode?: boolean;
   /** CSS class name for the editor container */
   className?: string;
 }

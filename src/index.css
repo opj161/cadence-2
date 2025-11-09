@@ -7,6 +7,10 @@
 /* Import Tailwind CSS v4 */
 @import "tailwindcss";
 
+/* Configure Tailwind content sources */
+@source "../src/**/*.{ts,tsx}";
+@source "../safelist-tailwind.txt";
+
 /* ============================================================================
  * GLOBAL CSS VARIABLES FOR CODEMIRROR THEMING
  * ============================================================================ */

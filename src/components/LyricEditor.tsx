@@ -20,6 +20,7 @@ import { editorTheme, fontSizeCompartment } from '../extensions/editorTheme';
 
 // Import utilities
 import { getWorkerManager } from '../utils/workerManager';
+import { logDebug, logError } from '../utils/logger';
 
 // Import types
 import type { LyricEditorProps } from '../types';
@@ -30,16 +31,17 @@ export function LyricEditor({
   onSyllableUpdate,
   syllablesVisible = true,
   fontSize = 16,
+  isDarkMode = true,
   className = '',
 }: LyricEditorProps) {
   const viewRef = useRef<EditorView | null>(null);
+  const debounceTimeoutRef = useRef<Map<number, number>>(new Map());
 
-  // --- START: CRITICAL FIX ---
   // Memoize the extensions array to prevent re-creation on every render.
-  // This is the root cause of the theme and state fields not applying.
   // Dependencies: ONLY syllablesVisible (changes extension set)
   // fontSize is handled via compartment reconfiguration in useEffect below
   const extensions = useMemo<Extension[]>(() => {
+    logDebug('LyricEditor', 'Re-creating extensions array', { syllablesVisible });
     const initialExtensions: Extension[] = [
       editorTheme,
       fontSizeCompartment.of(EditorView.theme({
@@ -56,25 +58,23 @@ export function LyricEditor({
     }
 
     return initialExtensions;
-  }, [syllablesVisible]); // <-- CRITICAL: Only syllablesVisible, NOT fontSize
-  // --- END: CRITICAL FIX ---
+  }, [syllablesVisible]);
 
   /**
    * Process a line of text for syllable counting
    */
   const processLine = useCallback(async (lineNumber: number, text: string) => {
     try {
-      console.log('[LyricEditor] Processing line:', { lineNumber, text, textLength: text.length });
+      logDebug('LyricEditor', `Processing line ${lineNumber}`, { textLength: text.length });
       const workerManager = getWorkerManager();
       const data = await workerManager.processLine(text, lineNumber);
-      console.log('[LyricEditor] Received syllable data:', { lineNumber, totalSyllables: data.totalSyllables, wordCount: data.words.length });
+      logDebug('LyricEditor', `Received syllable data for line ${lineNumber}`, data);
 
       // Update editor state with syllable data
       if (viewRef.current) {
         viewRef.current.dispatch({
           effects: updateLineSyllables(lineNumber, data),
         });
-        console.log('[LyricEditor] Dispatched syllable update to editor');
       }
 
       // Notify parent component
@@ -82,15 +82,36 @@ export function LyricEditor({
         onSyllableUpdate(lineNumber, data);
       }
     } catch (error) {
-      console.error(`[LyricEditor] Error processing line ${lineNumber}:`, error);
+      // Ignore 'Request superseded' errors as they are expected during debouncing
+      if (error instanceof Error && error.message !== 'Request superseded') {
+        logError('LyricEditor', `Error processing line ${lineNumber}:`, error);
+      }
     }
   }, [onSyllableUpdate]);
+
+  /**
+   * Debounced version of processLine to avoid overwhelming the worker during rapid typing.
+   */
+  const debouncedProcessLine = useCallback((lineNumber: number, text: string) => {
+    // Cancel any existing timeout for this line
+    if (debounceTimeoutRef.current.has(lineNumber)) {
+      clearTimeout(debounceTimeoutRef.current.get(lineNumber));
+    }
+    
+    // Set new timeout
+    const timeoutId = window.setTimeout(() => {
+      processLine(lineNumber, text);
+      debounceTimeoutRef.current.delete(lineNumber);
+    }, 250); // 250ms debounce delay
+    
+    debounceTimeoutRef.current.set(lineNumber, timeoutId);
+  }, [processLine]);
 
   /**
    * Handle document changes
    */
   const handleChange = useCallback((value: string, viewUpdate?: import('@codemirror/view').ViewUpdate) => {
-    console.log('[LyricEditor] handleChange called:', { valueLength: value.length, linesCount: value.split('\n').length });
+    logDebug('LyricEditor', 'handleChange called', { valueLength: value.length });
     
     // Call parent onChange
     if (onChange) {
@@ -113,13 +134,12 @@ export function LyricEditor({
       changedLines.forEach(lineNumber => {
         if (lineNumber + 1 <= state.doc.lines) {
           const line = state.doc.line(lineNumber + 1);
-          // ALWAYS process the line. The worker will handle empty text by returning 0s,
-          // which correctly updates/clears the state for that line.
-          processLine(lineNumber, line.text);
+          // Use debounced processing to avoid overwhelming the worker during rapid typing
+          debouncedProcessLine(lineNumber, line.text);
         }
       });
     }
-  }, [onChange, processLine]);
+  }, [onChange, debouncedProcessLine]);
 
   /**
    * Process all lines on initial mount
@@ -130,7 +150,7 @@ export function LyricEditor({
     const { state } = viewRef.current;
     const doc = state.doc;
 
-    console.log('[LyricEditor] Processing all lines on mount:', { totalLines: doc.lines });
+    logDebug('LyricEditor', 'Processing all lines on mount', { totalLines: doc.lines });
 
     // Process each line
     for (let i = 1; i <= doc.lines; i++) {
@@ -140,7 +160,6 @@ export function LyricEditor({
 
       // Skip empty lines
       if (text.trim().length === 0) {
-        console.log(`[LyricEditor] Skipping empty line ${lineNumber}`);
         continue;
       }
 
@@ -153,6 +172,7 @@ export function LyricEditor({
    */
   useEffect(() => {
     if (viewRef.current) {
+      logDebug('LyricEditor', `Reconfiguring font size to ${fontSize}px`);
       viewRef.current.dispatch({
         effects: fontSizeCompartment.reconfigure(EditorView.theme({
           '&': { fontSize: `${fontSize}px` }
@@ -166,6 +186,7 @@ export function LyricEditor({
       <CodeMirror
         value={value}
         height="100%"
+        theme={isDarkMode ? 'dark' : 'light'}
         extensions={extensions}
         onChange={handleChange}
         basicSetup={{

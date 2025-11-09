@@ -30,14 +30,35 @@ function App() {
   const [syllableData, setSyllableData] = useState<Map<number, SyllableData>>(new Map());
   const [syllablesVisible, setSyllablesVisible] = useState(true);
   const [fontSize, setFontSize] = useState(16);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Initialize from localStorage or default to dark
+    return localStorage.theme === 'dark' || !localStorage.theme;
+  });
 
-  // Initialize dark mode on mount (ThemeToggle will handle this now)
+  // Initialize dark mode on mount and listen for theme changes
   useEffect(() => {
     // Set dark mode as default if not set
     if (!localStorage.theme) {
       localStorage.theme = 'dark';
       document.documentElement.classList.add('dark');
     }
+
+    // Listen for theme changes (from ThemeToggle component)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          const hasDarkClass = document.documentElement.classList.contains('dark');
+          setIsDarkMode(hasDarkClass);
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   const handleSyllableUpdate = useCallback((lineNumber: number, data: SyllableData) => {
@@ -160,6 +181,7 @@ function App() {
                 onChange={handleEditorChange}
                 syllablesVisible={syllablesVisible}
                 fontSize={fontSize}
+                isDarkMode={isDarkMode}
                 className="h-full"
               />
             </div>
