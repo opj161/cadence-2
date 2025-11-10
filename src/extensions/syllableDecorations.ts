@@ -6,8 +6,8 @@
  */
 
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view';
-import { StateField, RangeSetBuilder } from '@codemirror/state';
-import { syllableStateField, updateSyllableEffect } from './syllableState';
+import { StateField, type Range } from '@codemirror/state';
+import { updateSyllableEffect } from './syllableState';
 import type { SyllableData } from '../types';
 
 /**
@@ -45,8 +45,8 @@ function createLineDecorations(
   view: EditorView,
   lineNumber: number,
   data: SyllableData
-): Array<{ from: number; to: number; decoration: Decoration }> {
-  const decorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
+): Range<Decoration>[] {
+  const decorations: Range<Decoration>[] = [];
   const doc = view.state.doc;
   
   // Get the line (CodeMirror uses 1-based line numbers)
@@ -74,7 +74,7 @@ function createLineDecorations(
         widget: new HyphenatedWordWidget(wordData.hyphenated),
       });
 
-      decorations.push({ from, to, decoration });
+      decorations.push(decoration.range(from, to));
     }
   }
   
@@ -90,41 +90,45 @@ export const syllableDecorationsField = StateField.define<DecorationSet>({
   },
 
   update(decorations, transaction): DecorationSet {
-    // Map existing decorations through document changes
+    // Map existing decorations through any document changes.
     decorations = decorations.map(transaction.changes);
-
-    // Check if syllable data was updated
-    const syllableUpdates = transaction.effects.filter(e => e.is(updateSyllableEffect));
     
-    if (syllableUpdates.length > 0) {
-      const syllableState = transaction.state.field(syllableStateField, false);
-      if (!syllableState) return decorations;
+    // Check for our specific effect.
+    for (const effect of transaction.effects) {
+      if (effect.is(updateSyllableEffect)) {
+        const { lineNumber, data } = effect.value;
+        const doc = transaction.state.doc;
+        
+        // Ensure the line still exists
+        if (lineNumber + 1 > doc.lines) continue;
 
-      // Build new decoration set
-      const builder = new RangeSetBuilder<Decoration>();
-      
-      // Collect all decorations from all lines
-      const allDecorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
-      
-      // Process each line that has syllable data
-      syllableState.lines.forEach((data, lineNum) => {
-        const lineDecorations = createLineDecorations(
+        // Create decorations for the single updated line.
+        const newDecorationsForLine = createLineDecorations(
           { state: transaction.state } as EditorView,
-          lineNum,
+          lineNumber,
           data
         );
-        allDecorations.push(...lineDecorations);
-      });
-      
-      // Sort by position and add to builder
-      allDecorations.sort((a, b) => a.from - b.from);
-      for (const { from, to, decoration } of allDecorations) {
-        builder.add(from, to, decoration);
+        
+        // ✅ OPTIMIZED: Use RangeSet.between() for targeted replacement
+        // This avoids iterating over all decorations in the document.
+        // O(log N + M) instead of O(N), where M is decorations on the changed line.
+        const newDecorations: Range<Decoration>[] = [];
+        
+        // Add all decorations that are NOT on the updated line
+        decorations.between(0, doc.length, (from, to, deco) => {
+          const decoLine = doc.lineAt(from);
+          if (decoLine.number - 1 !== lineNumber) {
+            newDecorations.push(deco.range(from, to));
+          }
+        });
+        
+        // Add the new decorations for the updated line
+        newDecorations.push(...newDecorationsForLine);
+        
+        // Rebuild the set (sorting is important for performance)
+        decorations = Decoration.set(newDecorations, true);
       }
-
-      decorations = builder.finish();
     }
-
     return decorations;
   },
 

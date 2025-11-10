@@ -102,18 +102,21 @@ export interface SyllableUpdateEffect {
 
 /**
  * Props for the main LyricEditor component
+ * 
+ * NOTE: LyricEditor is now an UNCONTROLLED component.
+ * Use initialValue to set initial content, not value.
  */
 export interface LyricEditorProps {
-  /** Initial content to display */
+  /** Initial content value (uncontrolled component) */
   initialValue?: string;
-  /** Callback when content changes */
-  onChange?: (value: string) => void;
   /** Callback when syllable data updates */
   onSyllableUpdate?: (lineNumber: number, data: SyllableData) => void;
   /** Whether to show syllable markers */
   syllablesVisible?: boolean;
   /** Font size for editor text */
   fontSize?: number;
+  /** Whether dark mode is active */
+  isDarkMode?: boolean;
   /** CSS class name for the editor container */
   className?: string;
 }

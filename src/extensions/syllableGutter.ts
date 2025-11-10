@@ -23,6 +23,15 @@ class SyllableGutterMarker extends GutterMarker {
     this.hasErrors = hasErrors;
   }
 
+  /**
+   * Compare this marker to another to determine if DOM update is needed.
+   * This optimization prevents unnecessary gutter re-renders when the syllable
+   * count hasn't changed, making typing smoother.
+   */
+  eq(other: SyllableGutterMarker): boolean {
+    return this.count === other.count && this.hasErrors === other.hasErrors;
+  }
+
   toDOM(): HTMLElement {
     const dom = document.createElement('div');
     dom.className = `syllable-count${this.hasErrors ? ' has-errors' : ''}`;
@@ -63,9 +72,37 @@ export const syllableGutter = gutter({
   },
 
   lineMarkerChange(update) {
-    // Re-render gutter if syllable state changed or document changed
-    return update.docChanged || 
-           update.transactions.some(tr => tr.effects.some(e => e.is(updateSyllableEffect)));
+    // ✅ OPTIMIZED: Only re-render gutter when necessary
+    
+    // 1. Re-render if syllable data was updated
+    const hasSyllableUpdate = update.transactions.some(tr => 
+      tr.effects.some(e => e.is(updateSyllableEffect))
+    );
+    if (hasSyllableUpdate) return true;
+
+    // 2. Re-render only if document structure changed (lines added/removed)
+    if (update.docChanged) {
+      let structuralChange = false;
+      
+      // Check if line count changed (most common structural change)
+      if (update.startState.doc.lines !== update.state.doc.lines) {
+        structuralChange = true;
+      } else {
+        // Check if any change involves line breaks
+        update.changes.iterChanges((fromA, toA, fromB, toB) => {
+          const textA = update.startState.doc.sliceString(fromA, toA);
+          const textB = update.state.doc.sliceString(fromB, toB);
+          if (textA.includes('\n') || textB.includes('\n')) {
+            structuralChange = true;
+          }
+        });
+      }
+      
+      if (structuralChange) return true;
+    }
+    
+    // No re-render needed for simple content changes
+    return false;
   },
 });
 

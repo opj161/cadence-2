@@ -8,13 +8,23 @@
 import { hyphenateSync } from 'hyphen/de';
 import type { WorkerRequest, WorkerResponse, SyllableData, WordSyllables } from '../types';
 
+// Simple, self-contained logger for worker environment
+// In production builds, this will be tree-shaken if unused
+const isDevelopment = import.meta.env.DEV;
+
+function logDebug(message: string, data?: unknown): void {
+  if (isDevelopment) {
+    console.log(`[Worker] ${message}`, data !== undefined ? data : '');
+  }
+}
+
 /**
  * Process a single word to count syllables
  */
 function processWord(word: string): WordSyllables {
   try {
     // Clean the word: remove punctuation but preserve apostrophes
-    const cleaned = word.replace(/[^\w']/g, '');
+    const cleaned = word.replace(/[^\p{L}']/gu, '');
     
     if (!cleaned) {
       return {
@@ -27,7 +37,7 @@ function processWord(word: string): WordSyllables {
     }
 
     // Get hyphenated version (soft hyphens: \u00AD)
-    const hyphenated = hyphenateSync(cleaned);
+    const hyphenated = hyphenateSync(cleaned, { minWordLength: 2 }); // Or your desired minimum
     
     // Split on soft hyphens to get syllables
     const syllables = hyphenated.split('\u00AD');
@@ -64,8 +74,9 @@ function processWord(word: string): WordSyllables {
 
 /**
  * Process an entire line of text
+ * EXPORTED for main-thread fallback support
  */
-function processLine(text: string): SyllableData {
+export function processLine(text: string): SyllableData {
   // Split line into words (preserve whitespace info for positioning)
   const wordRegex = /\S+/g;
   const matches = Array.from(text.matchAll(wordRegex));
@@ -90,12 +101,12 @@ function processLine(text: string): SyllableData {
  */
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const request = event.data;
-  console.log('[Worker] Received request:', { id: request.id, type: request.type, lineNumber: request.lineNumber, textLength: request.text.length });
+  logDebug('Received request', { id: request.id, type: request.type, lineNumber: request.lineNumber });
 
   try {
     if (request.type === 'process-line') {
       const data = processLine(request.text);
-      console.log('[Worker] Processed line:', { id: request.id, lineNumber: request.lineNumber, totalSyllables: data.totalSyllables, wordCount: data.words.length });
+      logDebug('Processed line', { id: request.id, totalSyllables: data.totalSyllables });
       
       const response: WorkerResponse = {
         id: request.id,
@@ -118,5 +129,5 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   }
 };
 
-// Log when worker is ready
-console.log('[Worker] Syllable processor worker loaded');
+logDebug('Syllable processor worker loaded');
+
