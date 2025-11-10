@@ -131,7 +131,7 @@ function App() {
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-[hsl(var(--color-background))]">
         {/* Header - Slimmer and more modern */}
         <header className="bg-white dark:bg-[hsl(220,18%,10%)] border-b border-gray-200 dark:border-[hsl(220,15%,18%)]">
-          <div className="max-w-full mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
                 Cadence
@@ -145,18 +145,18 @@ function App() {
         </header>
 
         {/* Main Editor - Simplified and correct layout */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <Toolbar
-            onClear={handleClear}
-            onExport={handleExport}
-            onToggleSyllables={handleToggleSyllables}
-            syllablesVisible={syllablesVisible}
-            onFontSizeChange={handleFontSizeChange}
-            fontSize={fontSize}
-          />
-          {/* Centered container with max-width for better readability on wide screens */}
-          <div className="flex-1 flex justify-center overflow-hidden">
-            <div className="flex-1 flex flex-col overflow-hidden p-4 max-w-7xl w-full">
+        <main className="flex-1 flex flex-col overflow-hidden items-center">
+          <div className="flex flex-col w-full max-w-7xl h-full">
+            <Toolbar
+              onClear={handleClear}
+              onExport={handleExport}
+              onToggleSyllables={handleToggleSyllables}
+              syllablesVisible={syllablesVisible}
+              onFontSizeChange={handleFontSizeChange}
+              fontSize={fontSize}
+            />
+            {/* Centered container with max-width for better readability on wide screens */}
+            <div className="flex-1 flex flex-col overflow-hidden p-4">
               {/* Error Display within main content area */}
               {errors.length > 0 && (
                 <ErrorDisplay
@@ -178,13 +178,13 @@ function App() {
                 />
               </div>
             </div>
+            <StatisticsPanel
+              lineCount={statistics.lineCount}
+              wordCount={statistics.wordCount}
+              syllableCount={statistics.syllableCount}
+              averageSyllablesPerLine={statistics.averageSyllablesPerLine}
+            />
           </div>
-          <StatisticsPanel
-            lineCount={statistics.lineCount}
-            wordCount={statistics.wordCount}
-            syllableCount={statistics.syllableCount}
-            averageSyllablesPerLine={statistics.averageSyllablesPerLine}
-          />
         </main>
       </div>
     </ErrorBoundary>
