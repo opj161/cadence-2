@@ -35,7 +35,7 @@ export const editorTheme = EditorView.theme({
   
   // Scroller
   '.cm-scroller': {
-    padding: '2rem 3rem 2rem 1.5rem',
+    padding: '1.5rem 3rem 1.5rem 1.5rem',
     overflow: 'auto',
     fontFamily: 'inherit',
   },
@@ -56,7 +56,6 @@ export const editorTheme = EditorView.theme({
   '.cm-gutters': {
     background: 'hsl(var(--color-gutter-bg))',
     borderRight: '1px solid hsl(var(--color-border))',
-    padding: '0 1.25rem 0 1rem',
     minWidth: 'fit-content',
   },
   
@@ -105,15 +104,14 @@ export const editorTheme = EditorView.theme({
     fontWeight: '700',
   },
   
-  // Syllable gutter
-  '.cm-syllable-gutter': {
-    minWidth: '3.5rem',
-    paddingLeft: '0.75rem',
-    paddingRight: '0.75rem',
+  // Syllable gutter - let CodeMirror control height
+  '.cm-syllable-gutter .cm-gutterElement': {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'transparent',
+    minWidth: '3.5rem',
+    paddingLeft: '0.75rem',
+    paddingRight: '0.75rem',
   },
   
   // Hyphenated words - subtle by default
@@ -142,5 +140,42 @@ export const editorTheme = EditorView.theme({
     color: 'hsl(var(--color-muted) / 0.6)',
     fontStyle: 'italic',
     position: 'relative',
+  },
+  
+  // Syllable count badge (custom gutter widget)
+  // Height is 100% to fill the space allocated by CodeMirror's layout engine
+  '.syllable-count': {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '2rem',
+    height: '90%',
+    padding: '0 0.5rem',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    fontFamily: 'var(--font-mono)',
+    fontVariantNumeric: 'tabular-nums',
+    lineHeight: '1',
+    verticalAlign: 'middle',
+    background: 'hsl(var(--color-primary) / 0.15)',
+    color: 'hsl(var(--color-primary))',
+    border: '1px solid hsl(var(--color-primary) / 0.3)',
+    borderRadius: '0.375rem',
+    transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
+    cursor: 'default',
+  },
+  
+  // Syllable count hover state
+  '.syllable-count:hover': {
+    background: 'hsl(var(--color-primary) / 0.25)',
+    borderColor: 'hsl(var(--color-primary) / 0.5)',
+    transform: 'translateY(-1px)',
+  },
+  
+  // Syllable count error state
+  '.syllable-count.has-errors': {
+    color: 'hsl(0 85% 65%)',
+    background: 'hsl(0 85% 65% / 0.15)',
+    borderColor: 'hsl(0 85% 65% / 0.3)',
   },
 }, { dark: true });

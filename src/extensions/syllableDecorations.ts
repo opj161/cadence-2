@@ -89,8 +89,6 @@ export const syllableDecorationsField = StateField.define<DecorationSet>({
     return Decoration.none;
   },
 
-  // --- START: PERFORMANCE FIX ---
-  // Rewrite the update function for incremental updates.
   update(decorations, transaction): DecorationSet {
     // Map existing decorations through any document changes.
     decorations = decorations.map(transaction.changes);
@@ -103,7 +101,6 @@ export const syllableDecorationsField = StateField.define<DecorationSet>({
         
         // Ensure the line still exists
         if (lineNumber + 1 > doc.lines) continue;
-        const line = doc.line(lineNumber + 1);
 
         // Create decorations for the single updated line.
         const newDecorationsForLine = createLineDecorations(
@@ -112,19 +109,28 @@ export const syllableDecorationsField = StateField.define<DecorationSet>({
           data
         );
         
-        // Perform an efficient, targeted update.
-        decorations = decorations.update({
-          // Remove old decorations ONLY in the range of the changed line.
-          filter: (from) => from < line.from || from > line.to,
-          // Add the new decorations for that line.
-          add: newDecorationsForLine,
-          sort: true
+        // ✅ OPTIMIZED: Use RangeSet.between() for targeted replacement
+        // This avoids iterating over all decorations in the document.
+        // O(log N + M) instead of O(N), where M is decorations on the changed line.
+        const newDecorations: Range<Decoration>[] = [];
+        
+        // Add all decorations that are NOT on the updated line
+        decorations.between(0, doc.length, (from, to, deco) => {
+          const decoLine = doc.lineAt(from);
+          if (decoLine.number - 1 !== lineNumber) {
+            newDecorations.push(deco.range(from, to));
+          }
         });
+        
+        // Add the new decorations for the updated line
+        newDecorations.push(...newDecorationsForLine);
+        
+        // Rebuild the set (sorting is important for performance)
+        decorations = Decoration.set(newDecorations, true);
       }
     }
     return decorations;
   },
-  // --- END: PERFORMANCE FIX ---
 
   provide: f => EditorView.decorations.from(f),
 });

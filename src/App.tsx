@@ -7,6 +7,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { LyricEditor } from './components/LyricEditor';
 import { ErrorDisplay } from './components/ErrorDisplay';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toolbar } from './components/Toolbar';
 import { StatisticsPanel } from './components/StatisticsPanel';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -26,7 +27,7 @@ Sieh, wie die Markierungen erscheinen
 
 function App() {
   const [errors, setErrors] = useState<string[]>([]);
-  const [editorContent, setEditorContent] = useState(INITIAL_CONTENT);
+  const [editorKey, setEditorKey] = useState(0); // Key to force re-mount for clear
   const [syllableData, setSyllableData] = useState<Map<number, SyllableData>>(new Map());
   const [syllablesVisible, setSyllablesVisible] = useState(true);
   const [fontSize, setFontSize] = useState(16);
@@ -85,24 +86,18 @@ function App() {
 
   const handleClear = useCallback(() => {
     if (confirm('Clear all text?')) {
-      setEditorContent('');
+      // Force re-mount with empty content by changing key
+      setEditorKey(prev => prev + 1);
       setSyllableData(new Map());
     }
   }, []);
 
-  const handleExport = useCallback((format: 'txt' | 'html') => {
-    const content = editorContent;
-    const blob = format === 'txt' 
-      ? new Blob([content], { type: 'text/plain' })
-      : new Blob([`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Cadence Export</title></head><body><pre>${content}</pre></body></html>`], { type: 'text/html' });
-    
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lyrics.${format}`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [editorContent]);
+  const handleExport = useCallback(() => {
+    // Since we don't track content in state anymore, we need to get it from the editor
+    // For now, we'll disable export until we implement a ref-based approach
+    console.warn('Export is temporarily disabled during refactor');
+    alert('Export feature will be re-enabled in the next update');
+  }, []);
 
   const handleToggleSyllables = useCallback(() => {
     setSyllablesVisible(prev => !prev);
@@ -112,15 +107,11 @@ function App() {
     setFontSize(size);
   }, []);
 
-  const handleEditorChange = useCallback((value: string) => {
-    setEditorContent(value);
-  }, []);
-
-  // Calculate statistics
+  // Calculate statistics from syllable data only
   const statistics = useMemo(() => {
-    const lines = editorContent.split('\n').filter(line => line.trim().length > 0);
     let totalWords = 0;
     let totalSyllables = 0;
+    const lineCount = syllableData.size;
 
     syllableData.forEach(data => {
       totalWords += data.words.length;
@@ -128,73 +119,75 @@ function App() {
     });
 
     return {
-      lineCount: lines.length,
+      lineCount,
       wordCount: totalWords,
       syllableCount: totalSyllables,
-      averageSyllablesPerLine: lines.length > 0 ? totalSyllables / lines.length : 0,
+      averageSyllablesPerLine: lineCount > 0 ? totalSyllables / lineCount : 0,
     };
-  }, [editorContent, syllableData]);
+  }, [syllableData]);
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-[hsl(var(--color-background))]">
-      {/* Header - Slimmer and more modern */}
-      <header className="bg-white dark:bg-[hsl(220,18%,10%)] border-b border-gray-200 dark:border-[hsl(220,15%,18%)]">
-        <div className="max-w-full mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
-              Cadence
-            </h1>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
-              Beta
-            </span>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      {/* Error Display */}
-      {errors.length > 0 && (
-        <div className="px-6 py-2">
-          <ErrorDisplay
-            errors={errors}
-            onDismiss={handleDismissErrors}
-          />
-        </div>
-      )}
-
-      {/* Main Editor - Full width, no unnecessary padding */}
-      <main className="flex-1 overflow-hidden flex flex-col">
-        <div className="h-full flex flex-col">
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <Toolbar
-              onClear={handleClear}
-              onExport={handleExport}
-              onToggleSyllables={handleToggleSyllables}
-              syllablesVisible={syllablesVisible}
-              onFontSizeChange={handleFontSizeChange}
-              fontSize={fontSize}
-            />
-            <div className="flex-1 overflow-hidden">
-              <LyricEditor
-                value={editorContent}
-                onSyllableUpdate={handleSyllableUpdate}
-                onChange={handleEditorChange}
-                syllablesVisible={syllablesVisible}
-                fontSize={fontSize}
-                isDarkMode={isDarkMode}
-                className="h-full"
-              />
+    <ErrorBoundary>
+      <div className="flex flex-col h-screen bg-gray-50 dark:bg-[hsl(var(--color-background))]">
+        {/* Header - Slimmer and more modern */}
+        <header className="bg-white dark:bg-[hsl(220,18%,10%)] border-b border-gray-200 dark:border-[hsl(220,15%,18%)]">
+          <div className="max-w-full mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
+                Cadence
+              </h1>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+                Beta
+              </span>
             </div>
-            <StatisticsPanel
-              lineCount={statistics.lineCount}
-              wordCount={statistics.wordCount}
-              syllableCount={statistics.syllableCount}
-              averageSyllablesPerLine={statistics.averageSyllablesPerLine}
-            />
+            <ThemeToggle />
           </div>
-        </div>
-      </main>
-    </div>
+        </header>
+
+        {/* Main Editor - Simplified and correct layout */}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <Toolbar
+            onClear={handleClear}
+            onExport={handleExport}
+            onToggleSyllables={handleToggleSyllables}
+            syllablesVisible={syllablesVisible}
+            onFontSizeChange={handleFontSizeChange}
+            fontSize={fontSize}
+          />
+          {/* Centered container with max-width for better readability on wide screens */}
+          <div className="flex-1 flex justify-center overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden p-4 max-w-7xl w-full">
+              {/* Error Display within main content area */}
+              {errors.length > 0 && (
+                <ErrorDisplay
+                  errors={errors}
+                  onDismiss={handleDismissErrors}
+                  className="mb-4"
+                />
+              )}
+              {/* Editor container */}
+              <div className="flex-1 relative overflow-hidden">
+                <LyricEditor
+                  key={editorKey}
+                  initialValue={INITIAL_CONTENT}
+                  onSyllableUpdate={handleSyllableUpdate}
+                  syllablesVisible={syllablesVisible}
+                  fontSize={fontSize}
+                  isDarkMode={isDarkMode}
+                  className="absolute inset-0"
+                />
+              </div>
+            </div>
+          </div>
+          <StatisticsPanel
+            lineCount={statistics.lineCount}
+            wordCount={statistics.wordCount}
+            syllableCount={statistics.syllableCount}
+            averageSyllablesPerLine={statistics.averageSyllablesPerLine}
+          />
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
 

@@ -2,16 +2,20 @@
  * Worker Manager
  * 
  * Manages communication with the syllable processor Web Worker.
- * Provides a promise-based API for processing text lines.
+ * Provides a promise-based API for processing text lines with automatic
+ * error recovery and main-thread fallback support.
  */
 
 import type { WorkerRequest, WorkerResponse, SyllableData } from '../types';
-import { logDebug, logError } from './logger';
+import { logger } from './logger';
 
 type PromiseExecutor<T> = {
   resolve: (data: T) => void;
   reject: (error: Error) => void;
 };
+
+// Dynamically import the processLine function type for the fallback
+type ProcessLineFn = (text: string) => SyllableData;
 
 export class WorkerManager {
   private worker: Worker;
@@ -20,36 +24,66 @@ export class WorkerManager {
   // Track pending requests by line number to handle cancellation
   private lineRequestMap: Map<number, number> = new Map();
 
+  // Recovery and fallback state
+  private workerFailureCount = 0;
+  private readonly MAX_WORKER_FAILURES = 3;
+  private useFallback = false;
+  private processLineFallback: ProcessLineFn | null = null;
+
   constructor() {
-    logDebug('WorkerManager', 'Initializing Web Worker...');
+    logger.debug('WorkerManager', 'Initializing Web Worker...');
+    this.worker = this.createWorker();
+  }
+
+  private createWorker(): Worker {
     // Create the Web Worker using Vite's special syntax
-    this.worker = new Worker(
+    const newWorker = new Worker(
       new URL('../workers/syllableProcessor.worker.ts', import.meta.url),
       { type: 'module' }
     );
-    logDebug('WorkerManager', 'Worker created successfully');
+    
+    logger.debug('WorkerManager', 'Worker created successfully');
 
     // Set up message handler
-    this.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+    newWorker.onmessage = (event: MessageEvent<WorkerResponse>) => {
       this.handleResponse(event.data);
     };
 
-    // Set up error handler
-    this.worker.onerror = (error) => {
-      logError('WorkerManager', 'Worker error:', error);
-      // Reject all pending requests
+    // Enhanced error handler with recovery logic
+    newWorker.onerror = (error) => {
+      logger.error('WorkerManager', 'Worker error:', error);
+      this.workerFailureCount++;
+
+      // Reject all current requests
       this.pendingRequests.forEach(({ reject }) => {
-        reject(new Error('Worker encountered a critical error'));
+        reject(new Error('Worker encountered an error and is restarting.'));
       });
       this.pendingRequests.clear();
       this.lineRequestMap.clear();
+
+      if (this.workerFailureCount >= this.MAX_WORKER_FAILURES) {
+        logger.warn('WorkerManager', `Worker failed ${this.workerFailureCount} times. Switching to main-thread fallback.`);
+        this.useFallback = true;
+        newWorker.terminate();
+      } else {
+        logger.warn('WorkerManager', `Attempting to restart worker (failure #${this.workerFailureCount}).`);
+        newWorker.terminate();
+        this.worker = this.createWorker();
+      }
     };
+    
+    return newWorker;
   }
 
   /**
    * Process a line of text and return syllable data
    */
-  processLine(text: string, lineNumber: number): Promise<SyllableData> {
+  async processLine(text: string, lineNumber: number): Promise<SyllableData> {
+    // Check for fallback mode
+    if (this.useFallback) {
+      return this.processLineOnMainThread(text);
+    }
+    
     // Cancel any existing request for the same line to prevent race conditions
     if (this.lineRequestMap.has(lineNumber)) {
       const oldRequestId = this.lineRequestMap.get(lineNumber)!;
@@ -62,7 +96,7 @@ export class WorkerManager {
 
     return new Promise((resolve, reject) => {
       const id = this.requestId++;
-      logDebug('WorkerManager', 'Sending request', { id, lineNumber, textLength: text.length });
+      logger.debug('WorkerManager', 'Sending request', { id, lineNumber, textLength: text.length });
       
       // Store promise handlers
       this.pendingRequests.set(id, { resolve, reject });
@@ -79,7 +113,7 @@ export class WorkerManager {
       try {
         this.worker.postMessage(request);
       } catch (error) {
-        logError('WorkerManager', 'Failed to send message:', error);
+        logger.error('WorkerManager', 'Failed to send message:', error);
         this.pendingRequests.delete(id);
         this.lineRequestMap.delete(lineNumber);
         reject(error instanceof Error ? error : new Error('Failed to send message to worker'));
@@ -88,10 +122,26 @@ export class WorkerManager {
   }
 
   /**
+   * Fallback processing function on the main thread
+   */
+  private async processLineOnMainThread(text: string): Promise<SyllableData> {
+    if (!this.processLineFallback) {
+      try {
+        const { processLine } = await import('../workers/syllableProcessor.worker');
+        this.processLineFallback = processLine;
+      } catch (e) {
+        logger.error('WorkerManager', 'Failed to load fallback processor:', e);
+        throw new Error('Fallback processor failed to load.');
+      }
+    }
+    return this.processLineFallback(text);
+  }
+
+  /**
    * Handle response from worker
    */
   private handleResponse(response: WorkerResponse): void {
-    logDebug('WorkerManager', 'Received response', { id: response.id, type: response.type });
+    logger.debug('WorkerManager', 'Received response', { id: response.id, type: response.type });
     
     const pending = this.pendingRequests.get(response.id);
     
@@ -105,7 +155,7 @@ export class WorkerManager {
     
     if (!pending) {
       // This is expected if the request was superseded, so we don't warn.
-      logDebug('WorkerManager', `Received response for a superseded or unknown request ID: ${response.id}`);
+      logger.debug('WorkerManager', `Received response for a superseded or unknown request ID: ${response.id}`);
       return;
     }
 

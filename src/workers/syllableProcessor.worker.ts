@@ -24,7 +24,7 @@ function logDebug(message: string, data?: unknown): void {
 function processWord(word: string): WordSyllables {
   try {
     // Clean the word: remove punctuation but preserve apostrophes
-    const cleaned = word.replace(/[^\w']/g, '');
+    const cleaned = word.replace(/[^\p{L}']/gu, '');
     
     if (!cleaned) {
       return {
@@ -37,7 +37,7 @@ function processWord(word: string): WordSyllables {
     }
 
     // Get hyphenated version (soft hyphens: \u00AD)
-    const hyphenated = hyphenateSync(cleaned);
+    const hyphenated = hyphenateSync(cleaned, { minWordLength: 2 }); // Or your desired minimum
     
     // Split on soft hyphens to get syllables
     const syllables = hyphenated.split('\u00AD');
@@ -74,8 +74,9 @@ function processWord(word: string): WordSyllables {
 
 /**
  * Process an entire line of text
+ * EXPORTED for main-thread fallback support
  */
-function processLine(text: string): SyllableData {
+export function processLine(text: string): SyllableData {
   // Split line into words (preserve whitespace info for positioning)
   const wordRegex = /\S+/g;
   const matches = Array.from(text.matchAll(wordRegex));
