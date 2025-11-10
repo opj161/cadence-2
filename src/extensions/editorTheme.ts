@@ -116,7 +116,6 @@ export const editorTheme = EditorView.theme({
   
   // Hyphenated words - subtle by default
   '.hyphenated-word': {
-    color: 'hsl(var(--color-muted) / 0.4)', // Very subtle by default
     transition: 'color 150ms ease-in-out',
   },
   
