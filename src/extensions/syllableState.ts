@@ -25,43 +25,49 @@ export const syllableStateField = StateField.define<SyllableState>({
   },
 
   update(state, transaction): SyllableState {
-    let newState = state;
+    let newLines = state.lines;
+    let updated = false;
 
     // Process syllable update effects
     for (const effect of transaction.effects) {
       if (effect.is(updateSyllableEffect)) {
         const { lineNumber, data } = effect.value;
-        const newLines = new Map(newState.lines);
+        // Only create new Map if this is the first update in this transaction
+        if (!updated) {
+          newLines = new Map(state.lines);
+          updated = true;
+        }
         newLines.set(lineNumber, data);
-        
-        newState = {
-          lines: newLines,
-          lastUpdate: Date.now(),
-        };
       }
     }
 
     // Clear syllable data for deleted lines
     if (transaction.docChanged) {
-      const newLines = new Map<number, SyllableData>();
       const doc = transaction.newDoc;
+      const linesToRemove: number[] = [];
       
-      // Only keep syllable data for lines that still exist
-      newState.lines.forEach((data, lineNum) => {
-        if (lineNum < doc.lines) {
-          newLines.set(lineNum, data);
+      // Identify lines that no longer exist
+      newLines.forEach((_, lineNum) => {
+        if (lineNum >= doc.lines) {
+          linesToRemove.push(lineNum);
         }
       });
 
-      if (newLines.size !== newState.lines.size) {
-        newState = {
-          lines: newLines,
-          lastUpdate: Date.now(),
-        };
+      // Only create new Map if we need to remove lines
+      if (linesToRemove.length > 0) {
+        if (!updated) {
+          newLines = new Map(state.lines);
+          updated = true;
+        }
+        linesToRemove.forEach(lineNum => newLines.delete(lineNum));
       }
     }
 
-    return newState;
+    // Only create new state object if something changed
+    return updated ? {
+      lines: newLines,
+      lastUpdate: Date.now(),
+    } : state;
   },
 });
 

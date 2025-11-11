@@ -4,7 +4,7 @@
  * Root component for the Cadence lyric editor application.
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { LyricEditor } from './components/LyricEditor';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -28,15 +28,23 @@ Sieh, wie die Markierungen erscheinen
 function App() {
   const [errors, setErrors] = useState<string[]>([]);
   const [editorKey, setEditorKey] = useState(0); // Key to force re-mount for clear
-  const [syllableData, setSyllableData] = useState<Map<number, SyllableData>>(new Map());
+  // Use ref to track syllable data without triggering re-renders
+  const syllableDataRef = useRef<Map<number, SyllableData>>(new Map());
   const [syllablesVisible, setSyllablesVisible] = useState(true);
   const [fontSize, setFontSize] = useState(16);
+  // Maintain running statistics for better performance
+  const [statistics, setStatistics] = useState({
+    lineCount: 0,
+    wordCount: 0,
+    syllableCount: 0,
+    averageSyllablesPerLine: 0,
+  });
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Initialize from localStorage or default to dark
     return localStorage.theme === 'dark' || !localStorage.theme;
   });
 
-  // Initialize dark mode on mount and listen for theme changes
+  // Initialize dark mode on mount and listen for theme changes via custom event
   useEffect(() => {
     // Set dark mode as default if not set
     if (!localStorage.theme) {
@@ -44,30 +52,40 @@ function App() {
       document.documentElement.classList.add('dark');
     }
 
-    // Listen for theme changes (from ThemeToggle component)
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') {
-          const hasDarkClass = document.documentElement.classList.contains('dark');
-          setIsDarkMode(hasDarkClass);
-        }
-      });
-    });
+    // Listen for theme changes via custom event (more efficient than MutationObserver)
+    const handleThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ isDark: boolean }>;
+      setIsDarkMode(customEvent.detail.isDark);
+    };
 
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    return () => observer.disconnect();
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
   }, []);
 
   const handleSyllableUpdate = useCallback((lineNumber: number, data: SyllableData) => {
-    // Update syllable data map
-    setSyllableData(prev => {
-      const next = new Map(prev);
-      next.set(lineNumber, data);
-      return next;
+    // Update syllable data map and statistics incrementally
+    const syllableData = syllableDataRef.current;
+    const oldData = syllableData.get(lineNumber);
+    syllableData.set(lineNumber, data);
+    
+    // Update statistics incrementally
+    setStatistics(stats => {
+      const lineCount = syllableData.size;
+      // Calculate delta for words and syllables
+      const oldWords = oldData?.words.length || 0;
+      const oldSyllables = oldData?.totalSyllables || 0;
+      const newWords = data.words.length;
+      const newSyllables = data.totalSyllables;
+      
+      const wordCount = stats.wordCount - oldWords + newWords;
+      const syllableCount = stats.syllableCount - oldSyllables + newSyllables;
+      
+      return {
+        lineCount,
+        wordCount,
+        syllableCount,
+        averageSyllablesPerLine: lineCount > 0 ? syllableCount / lineCount : 0,
+      };
     });
 
     // Collect any errors from processing
@@ -88,7 +106,14 @@ function App() {
     if (confirm('Clear all text?')) {
       // Force re-mount with empty content by changing key
       setEditorKey(prev => prev + 1);
-      setSyllableData(new Map());
+      syllableDataRef.current = new Map();
+      // Reset statistics
+      setStatistics({
+        lineCount: 0,
+        wordCount: 0,
+        syllableCount: 0,
+        averageSyllablesPerLine: 0,
+      });
     }
   }, []);
 
@@ -106,25 +131,6 @@ function App() {
   const handleFontSizeChange = useCallback((size: number) => {
     setFontSize(size);
   }, []);
-
-  // Calculate statistics from syllable data only
-  const statistics = useMemo(() => {
-    let totalWords = 0;
-    let totalSyllables = 0;
-    const lineCount = syllableData.size;
-
-    syllableData.forEach(data => {
-      totalWords += data.words.length;
-      totalSyllables += data.totalSyllables;
-    });
-
-    return {
-      lineCount,
-      wordCount: totalWords,
-      syllableCount: totalSyllables,
-      averageSyllablesPerLine: lineCount > 0 ? totalSyllables / lineCount : 0,
-    };
-  }, [syllableData]);
 
   return (
     <ErrorBoundary>

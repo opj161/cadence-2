@@ -37,26 +37,30 @@ function processWord(word: string): WordSyllables {
     }
 
     // Get hyphenated version (soft hyphens: \u00AD)
-    const hyphenated = hyphenateSync(cleaned, { minWordLength: 2 }); // Or your desired minimum
+    const hyphenated = hyphenateSync(cleaned, { minWordLength: 2 });
     
-    // Split on soft hyphens to get syllables
-    const syllables = hyphenated.split('\u00AD');
-    
-    // Calculate positions of syllable boundaries
-    const positions: number[] = [];
+    // Count syllables by counting soft hyphens + 1 (more efficient than split)
+    let count = 1;
     let pos = 0;
-    for (let i = 0; i < syllables.length - 1; i++) {
-      pos += syllables[i].length;
-      positions.push(pos);
+    const positions: number[] = [];
+    
+    // Single pass to count syllables and find positions
+    for (let i = 0; i < hyphenated.length; i++) {
+      if (hyphenated[i] === '\u00AD') {
+        count++;
+        positions.push(pos);
+      } else {
+        pos++;
+      }
     }
 
-    // Create display version with middle dots
-    const hyphenatedDisplay = syllables.join('·');
+    // Create display version only if multi-syllable (avoid unnecessary work)
+    const hyphenatedDisplay = count > 1 ? hyphenated.replace(/\u00AD/g, '·') : cleaned;
 
     return {
       word,
       hyphenated: hyphenatedDisplay,
-      count: syllables.length,
+      count,
       positions,
       success: true,
     };
