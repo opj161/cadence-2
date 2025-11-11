@@ -102,27 +102,29 @@ export const syllableDecorationsField = StateField.define<DecorationSet>({
         // Ensure the line still exists
         if (lineNumber + 1 > doc.lines) continue;
 
-        // Create decorations for the single updated line.
+        const line = doc.line(lineNumber + 1);
+        
+        // ✅ OPTIMIZED: Filter decorations efficiently using range
+        // Remove only decorations that overlap with the updated line
+        const newDecorations: Range<Decoration>[] = [];
+        
+        // Use between() to iterate only through relevant ranges
+        // Before the line
+        decorations.between(0, line.from, (from, to, deco) => {
+          newDecorations.push(deco.range(from, to));
+        });
+        
+        // After the line
+        decorations.between(line.to + 1, doc.length, (from, to, deco) => {
+          newDecorations.push(deco.range(from, to));
+        });
+        
+        // Add new decorations for the updated line
         const newDecorationsForLine = createLineDecorations(
           { state: transaction.state } as EditorView,
           lineNumber,
           data
         );
-        
-        // ✅ OPTIMIZED: Use RangeSet.between() for targeted replacement
-        // This avoids iterating over all decorations in the document.
-        // O(log N + M) instead of O(N), where M is decorations on the changed line.
-        const newDecorations: Range<Decoration>[] = [];
-        
-        // Add all decorations that are NOT on the updated line
-        decorations.between(0, doc.length, (from, to, deco) => {
-          const decoLine = doc.lineAt(from);
-          if (decoLine.number - 1 !== lineNumber) {
-            newDecorations.push(deco.range(from, to));
-          }
-        });
-        
-        // Add the new decorations for the updated line
         newDecorations.push(...newDecorationsForLine);
         
         // Rebuild the set (sorting is important for performance)
